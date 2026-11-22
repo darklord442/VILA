@@ -1,0 +1,463 @@
+const express = require('express');
+const http = require('http');
+const path = require('path');
+const bcrypt = require('bcryptjs');
+const { WebSocketServer } = require('ws');
+const db = require('./db');
+const { VELA_CATALOG } = require('./catalog');
+require('dotenv').config();
+
+const app = express();
+app.use(express.json());
+
+// Redirect trailing-slash .html URLs (e.g. /categories.html/ -> /categories.html)
+app.get(/\.html\/$/, (req, res) => {
+  res.redirect(301, req.path.replace(/\/$/, ''));
+});
+
+// Landing page: sign-in first
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../pages/sign-in.html'));
+});
+
+// Explicit routes for all HTML pages
+app.get('/index.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '../pages/index.html'));
+});
+
+app.get('/live-auction.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '../pages/live-auction.html'));
+});
+
+app.get('/categories.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '../pages/categories.html'));
+});
+
+app.get('/sell.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '../pages/sell.html'));
+});
+
+app.get('/profile.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '../pages/profile.html'));
+});
+
+app.get('/register.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '../pages/register.html'));
+});
+
+app.get('/sign-in.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '../pages/sign-in.html'));
+});
+
+// Serve the static frontend (HTML pages and images)
+app.use(express.static(path.join(__dirname, '../pages')));
+app.use('/css', express.static(path.join(__dirname, '../css')));
+app.use('/js', express.static(path.join(__dirname)));
+app.use('/assets', express.static(path.join(__dirname, '../assets')));
+
+// ============ Auth CRUD (users table) ============
+
+// CREATE - register a new user
+app.post('/api/register', async (req, res) => {
+  try {
+    const { fullName, email, password } = req.body;
+    if (!fullName || !email || !password) {
+      return res.status(400).json({ status: 'error', message: 'fullName, email and password are required' });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    const result = await db.query(
+      'INSERT INTO users (full_name, email, password_hash) VALUES ($1, $2, $3) RETURNING id, full_name, email, created_at',
+      [fullName, email, passwordHash]
+    );
+
+    res.status(201).json({ status: 'success', user: result.rows[0] });
+  } catch (err) {
+    if (err.code === '23505') {
+      return res.status(409).json({ status: 'error', message: 'Email already registered' });
+    }
+    console.error('Register error:', err);
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+});
+
+// READ - log in (verify credentials)
+app.post('/api/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ status: 'error', message: 'email and password are required' });
+    }
+
+    const result = await db.query(
+      'SELECT id, full_name, email, password_hash FROM users WHERE email = $1',
+      [email]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({ status: 'error', message: 'Invalid email or password' });
+    }
+
+    const user = result.rows[0];
+    const valid = await bcrypt.compare(password, user.password_hash);
+    if (!valid) {
+      return res.status(401).json({ status: 'error', message: 'Invalid email or password' });
+    }
+
+    // Never send the hash back to the client
+    const { password_hash, ...safeUser } = user;
+    res.json({ status: 'success', user: safeUser });
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+});
+
+// READ - get a user's profile
+app.get('/api/users/:id', async (req, res) => {
+  try {
+    const result = await db.query(
+      'SELECT id, full_name, email, created_at FROM users WHERE id = $1',
+      [req.params.id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ status: 'error', message: 'User not found' });
+    }
+    res.json({ status: 'success', user: result.rows[0] });
+  } catch (err) {
+    console.error('Get user error:', err);
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+});
+
+// UPDATE - change name and/or password
+app.put('/api/users/:id', async (req, res) => {
+  try {
+    const { fullName, password } = req.body;
+    const updates = [];
+    const values = [];
+
+    if (fullName) {
+      values.push(fullName);
+      updates.push(`full_name = $${values.length}`);
+    }
+    if (password) {
+      values.push(await bcrypt.hash(password, 10));
+      updates.push(`password_hash = $${values.length}`);
+    }
+    if (updates.length === 0) {
+      return res.status(400).json({ status: 'error', message: 'Nothing to update' });
+    }
+
+    values.push(req.params.id);
+    const result = await db.query(
+      `UPDATE users SET ${updates.join(', ')} WHERE id = $${values.length}
+       RETURNING id, full_name, email, created_at`,
+      values
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ status: 'error', message: 'User not found' });
+    }
+    res.json({ status: 'success', user: result.rows[0] });
+  } catch (err) {
+    console.error('Update user error:', err);
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+});
+
+// DELETE - remove a user account
+app.delete('/api/users/:id', async (req, res) => {
+  try {
+    const result = await db.query('DELETE FROM users WHERE id = $1 RETURNING id', [req.params.id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ status: 'error', message: 'User not found' });
+    }
+    res.json({ status: 'success', message: 'User deleted' });
+  } catch (err) {
+    console.error('Delete user error:', err);
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+});
+
+// ============ Auction Realtime (bids, chat, reactions) ============
+
+// Create tables on startup (idempotent)
+async function initAuctionTables() {
+  try {
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS auction_bids (
+        id SERIAL PRIMARY KEY,
+        lot_id TEXT NOT NULL,
+        amount INTEGER NOT NULL,
+        bidder TEXT,
+        paddle TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS auction_messages (
+        id SERIAL PRIMARY KEY,
+        lot_id TEXT,
+        user_name TEXT NOT NULL,
+        message TEXT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    console.log('Auction tables ready');
+  } catch (err) {
+    console.error('Auction table init failed (continuing anyway):', err.message);
+  }
+}
+initAuctionTables();
+
+function findCatalogLot(lotId) {
+  for (const dept of VELA_CATALOG) {
+    const item = dept.items.find(i => String(i.lotId) === String(lotId));
+    if (item) return { item, dept };
+  }
+  return null;
+}
+
+async function getTopBid(lotId) {
+  const result = await db.query(
+    'SELECT amount, bidder, paddle, created_at FROM auction_bids WHERE lot_id = $1 ORDER BY amount DESC, id DESC LIMIT 1',
+    [lotId]
+  );
+  return result.rows[0] || null;
+}
+
+function broadcast(payload) {
+  const data = JSON.stringify(payload);
+  wss.clients.forEach(client => {
+    if (client.readyState === 1) client.send(data);
+  });
+}
+
+// Shared bid placement logic (REST + WS)
+async function placeBid(lotId, amount, bidder, paddle) {
+  const key = lotId ? String(lotId) : null;
+  const num = Number(amount);
+  if (!Number.isFinite(num) || num <= 0) {
+    return { ok: false, error: 'A valid positive bid amount is required.' };
+  }
+  const found = key ? findCatalogLot(key) : null;
+  const top = key ? await getTopBid(key) : null;
+  const current = top ? top.amount : (found ? found.item.startingBid : 0);
+  const floor = found ? found.item.startingBid : 1;
+  if (num < floor) {
+    return { ok: false, error: `Minimum opening bid${key ? ` for Lot #${key}` : ''} is $${floor.toLocaleString()}.` };
+  }
+  if (top && num <= top.amount) {
+    return { ok: false, error: `Bid must exceed the current high bid of $${top.amount.toLocaleString()}.` };
+  }
+  const bidderName = bidder || 'Anonymous Paddle';
+  const result = await db.query(
+    'INSERT INTO auction_bids (lot_id, amount, bidder, paddle) VALUES ($1, $2, $3, $4) RETURNING id, created_at',
+    [key, num, bidderName, paddle || null]
+  );
+  const event = {
+    type: 'bid',
+    lotId: key,
+    amount: num,
+    bidder: bidderName,
+    paddle: paddle || null,
+    id: result.rows[0].id,
+    ts: result.rows[0].created_at,
+  };
+  broadcast(event);
+  return { ok: true, event };
+}
+
+// Shared chat logic (REST + WS)
+async function addChatMessage(lotId, userName, text) {
+  const clean = String(text || '').trim().slice(0, 500);
+  if (!clean) return null;
+  const name = (userName || 'Guest').slice(0, 60);
+  const key = lotId ? String(lotId) : null;
+  const result = await db.query(
+    'INSERT INTO auction_messages (lot_id, user_name, message) VALUES ($1, $2, $3) RETURNING id, created_at',
+    [key, name, clean]
+  );
+  const event = {
+    type: 'chat',
+    lotId: key,
+    user: name,
+    text: clean,
+    id: result.rows[0].id,
+    ts: result.rows[0].created_at,
+  };
+  broadcast(event);
+  return event;
+}
+
+// REST: list catalog lots with live bid state
+app.get('/api/lots', async (req, res) => {
+  try {
+    const lots = [];
+    for (const dept of VELA_CATALOG) {
+      for (const item of dept.items) {
+        const top = await getTopBid(item.lotId);
+        lots.push({
+          ...item,
+          department: dept.department,
+          deptName: dept.name,
+          currentBid: top ? top.amount : item.startingBid,
+          highBidder: top ? top.bidder : null,
+        });
+      }
+    }
+    res.json({ status: 'success', lots });
+  } catch (err) {
+    console.error('Lots error:', err);
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+});
+
+// REST: place a bid
+app.post('/api/lots/:lotId/bid', async (req, res) => {
+  try {
+    const { amount, bidder, paddle } = req.body || {};
+    const result = await placeBid(req.params.lotId, amount, bidder, paddle);
+    if (!result.ok) return res.status(400).json({ status: 'error', message: result.error });
+    res.json({ status: 'success', bid: result.event });
+  } catch (err) {
+    console.error('Bid error:', err);
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+});
+
+// REST: get recent chat for a lot (or all if none)
+async function handleGetChat(req, res) {
+  try {
+    const lotId = req.params.lotId || req.query.lotId || null;
+    const result = lotId
+      ? await db.query('SELECT id, user_name, message, created_at FROM auction_messages WHERE lot_id = $1 ORDER BY id DESC LIMIT 50', [String(lotId)])
+      : await db.query('SELECT id, user_name, message, created_at FROM auction_messages ORDER BY id DESC LIMIT 50');
+    res.json({ status: 'success', messages: result.rows.reverse() });
+  } catch (err) {
+    console.error('Chat fetch error:', err);
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+}
+app.get('/api/chat', handleGetChat);
+app.get('/api/chat/:lotId', handleGetChat);
+
+// REST: post a chat message
+async function handlePostChat(req, res) {
+  try {
+    const { user, text } = req.body || {};
+    const lotId = req.params.lotId || req.body.lotId || null;
+    const event = await addChatMessage(lotId, user, text);
+    if (!event) return res.status(400).json({ status: 'error', message: 'Message text is required' });
+    res.status(201).json({ status: 'success', message: event });
+  } catch (err) {
+    console.error('Chat post error:', err);
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+}
+app.post('/api/chat', handlePostChat);
+app.post('/api/chat/:lotId', handlePostChat);
+
+// Create HTTP server wrapping Express
+const server = http.createServer(app);
+
+// Attach WebSocket server to the same HTTP server
+const wss = new WebSocketServer({ server });
+
+// 1. Example Express REST Endpoint querying PostgreSQL
+app.get('/api/health', async (req, res) => {
+  try {
+    const result = await db.query('SELECT current_database() AS db, NOW() AS server_time');
+    res.json({ status: 'connected', data: result.rows[0] });
+  } catch (err) {
+    console.error('Database query error:', err);
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+});
+
+// 2. WebSocket: realtime auction events (bids, chat, reactions, state sync)
+wss.on('connection', (ws) => {
+  console.log('Client connected via WebSocket');
+
+  ws.on('message', async (rawMessage) => {
+    try {
+      const payload = JSON.parse(rawMessage);
+
+      switch (payload.type) {
+        case 'bid': {
+          const result = await placeBid(payload.lotId, payload.amount, payload.bidder, payload.paddle);
+          ws.send(JSON.stringify({ type: 'bid_ack', ok: result.ok, error: result.error, bid: result.event }));
+          break;
+        }
+        case 'chat': {
+          const event = await addChatMessage(payload.lotId, payload.user, payload.text);
+          ws.send(JSON.stringify({ type: 'chat_ack', ok: !!event, error: event ? null : 'Empty message' }));
+          break;
+        }
+        case 'reaction': {
+          // Ephemeral - broadcast only, not persisted
+          broadcast({
+            type: 'reaction',
+            emoji: String(payload.emoji || '').slice(0, 16),
+            user: payload.user || 'Guest',
+            lotId: payload.lotId || null,
+            ts: new Date().toISOString(),
+          });
+          break;
+        }
+        case 'state_request': {
+          // Send current bid state + recent chat for a lot (or all lots if none)
+          const lotId = payload.lotId || null;
+          const lots = [];
+          const deptList = lotId ? [VELA_CATALOG.find(d => d.items.some(i => String(i.lotId) === String(lotId)))] : VELA_CATALOG;
+          for (const dept of deptList.filter(Boolean)) {
+            for (const item of dept.items) {
+              if (lotId && String(item.lotId) !== String(lotId)) continue;
+              const top = await getTopBid(item.lotId);
+              lots.push({
+                lotId: item.lotId,
+                brand: item.brand,
+                name: item.name,
+                currentBid: top ? top.amount : item.startingBid,
+                highBidder: top ? top.bidder : null,
+              });
+            }
+          }
+          const chat = await db.query(
+            lotId
+              ? 'SELECT id, lot_id, user_name, message, created_at FROM auction_messages WHERE lot_id = $1 ORDER BY id DESC LIMIT 50'
+              : 'SELECT id, lot_id, user_name, message, created_at FROM auction_messages ORDER BY id DESC LIMIT 50',
+            lotId ? [String(lotId)] : []
+          );
+          ws.send(JSON.stringify({
+            type: 'state',
+            lots,
+            messages: chat.rows.reverse().map(r => ({
+              id: r.id, user: r.user_name, text: r.message, ts: r.created_at, lotId: r.lot_id,
+            })),
+          }));
+          break;
+        }
+        default: {
+          // Example: Fetch or insert data when a WS message arrives
+          const result = await db.query('SELECT NOW() AS timestamp');
+          ws.send(JSON.stringify({
+            event: 'db_ack',
+            received: payload,
+            dbTime: result.rows[0].timestamp,
+          }));
+        }
+      }
+    } catch (err) {
+      ws.send(JSON.stringify({ type: 'error', message: err.message }));
+    }
+  });
+
+  ws.on('close', () => console.log('Client disconnected'));
+});
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`Express & WebSocket server running on http://localhost:${PORT}`);
+});

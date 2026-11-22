@@ -1,0 +1,444 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<meta content="web_standard" name="shell-type">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="../css/live-auction.css" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "on-primary-fixed": "#001551",
+            "surface-container": "#f1f5f9",
+            "secondary-fixed": "#dae2fd",
+            "on-tertiary": "#ffffff",
+            "on-primary-container": "#ffffff",
+            "surface-container-low": "#ffffff",
+            "surface": "#ffffff",
+            "inverse-on-surface": "#eff1f3",
+            "outline": "#cbd5e1",
+            "on-tertiary-fixed-variant": "#004395",
+            "secondary-container": "#e2e8f0",
+            "surface-variant": "#f1f5f9",
+            "tertiary-fixed": "#d8e2ff",
+            "outline-variant": "#e2e8f0",
+            "primary-fixed-dim": "#b7c4ff",
+            "on-secondary": "#ffffff",
+            "surface-container-highest": "#e2e8f0",
+            "on-secondary-container": "#475569",
+            "on-tertiary-fixed": "#001a42",
+            "background": "#f8fafc",
+            "on-error": "#ffffff",
+            "on-primary": "#ffffff",
+            "on-background": "#0f172a",
+            "primary": "#2563eb",
+            "primary-fixed": "#dce1ff",
+            "on-secondary-fixed-variant": "#3f465c",
+            "primary-container": "#1d4ed8",
+            "error-container": "#fee2e2",
+            "tertiary": "#0284c7",
+            "on-surface": "#0f172a",
+            "on-secondary-fixed": "#131b2e",
+            "surface-tint": "#2563eb",
+            "surface-container-lowest": "#ffffff",
+            "tertiary-fixed-dim": "#adc6ff",
+            "on-surface-variant": "#64748b",
+            "inverse-primary": "#b7c4ff",
+            "surface-dim": "#e2e8f0",
+            "secondary-fixed-dim": "#bec6e0",
+            "on-error-container": "#991b1b",
+            "surface-container-high": "#ffffff",
+            "on-tertiary-container": "#c4d5ff",
+            "surface-bright": "#ffffff",
+            "error": "#dc2626",
+            "tertiary-container": "#0369a1",
+            "secondary": "#d97706",
+            "inverse-surface": "#1e293b",
+            "on-primary-fixed-variant": "#1d4ed8"
+          },
+          borderRadius: {
+            DEFAULT: "0.25rem",
+            lg: "0.5rem",
+            xl: "0.75rem",
+            full: "9999px"
+          },
+          spacing: {
+            gutter: "1.5rem",
+            margin: "2rem",
+            "margin-sm": "1rem",
+            "gutter-lg": "2rem",
+            "space-lg": "1.5rem",
+            "space-xs": "0.25rem",
+            "margin-lg": "4rem",
+            "space-sm": "0.5rem",
+            "space-md": "1rem",
+            "gutter-sm": "1rem",
+            "space-xl": "2.5rem"
+          },
+          fontFamily: {
+            "label-md": ["Plus Jakarta Sans", "sans-serif"],
+            "display-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-md": ["Plus Jakarta Sans", "sans-serif"],
+            "title-md": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-xl": ["Plus Jakarta Sans", "sans-serif"],
+            "body-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "body-md": ["Plus Jakarta Sans", "sans-serif"],
+            "counter-xl": ["Plus Jakarta Sans", "sans-serif"],
+            "body-sm": ["Plus Jakarta Sans", "sans-serif"],
+            "label-sm": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-xl-mobile": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-sm": ["Plus Jakarta Sans", "sans-serif"],
+            "display-lg-mobile": ["Plus Jakarta Sans", "sans-serif"],
+            "numeral-hero": ["Plus Jakarta Sans", "sans-serif"]
+          },
+          fontSize: {
+            "label-md": ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "600" }],
+            "display-lg": ["56px", { lineHeight: "64px", letterSpacing: "-0.03em", fontWeight: "800" }],
+            "headline-md": ["24px", { lineHeight: "32px", letterSpacing: "-0.015em", fontWeight: "600" }],
+            "title-md": ["16px", { lineHeight: "24px", letterSpacing: "-0.005em", fontWeight: "600" }],
+            "headline-xl": ["40px", { lineHeight: "48px", letterSpacing: "-0.025em", fontWeight: "700" }],
+            "body-lg": ["18px", { lineHeight: "28px", letterSpacing: "0em", fontWeight: "400" }],
+            "headline-lg": ["32px", { lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "700" }],
+            "body-md": ["15px", { lineHeight: "24px", letterSpacing: "0em", fontWeight: "400" }],
+            "counter-xl": ["36px", { lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "800" }],
+            "body-sm": ["13px", { lineHeight: "20px", letterSpacing: "0.005em", fontWeight: "400" }],
+            "label-sm": ["12px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "600" }],
+            "headline-xl-mobile": ["28px", { lineHeight: "36px", letterSpacing: "-0.015em", fontWeight: "700" }],
+            "headline-sm": ["20px", { lineHeight: "28px", letterSpacing: "-0.01em", fontWeight: "600" }],
+            "display-lg-mobile": ["36px", { lineHeight: "44px", letterSpacing: "-0.02em", fontWeight: "800" }],
+            "numeral-hero": ["38px", { lineHeight: "44px", letterSpacing: "-0.03em", fontWeight: "800" }]
+          }
+        },
+      },
+    };
+  </script>
+</head>
+<body class="bg-background text-on-surface antialiased selection:bg-blue-100 selection:text-primary">
+<!-- Top Navigation Header -->
+<header class="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-b border-slate-200/80 shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
+<div class="h-20 w-full px-margin flex items-center justify-between gap-space-lg">
+<div class="flex items-center gap-space-lg shrink-0">
+<div class="flex items-center"><a href="index.html" class="flex items-center gap-space-sm"><span class="font-bold tracking-[0.28em] text-xl text-slate-900 hover:text-primary transition-colors">VELA</span><span class="inline-block w-1.5 h-1.5 rounded-full bg-blue-600 mb-0.5 ml-0.5"></span></a></div>
+<div class="inline-flex items-center gap-space-xs px-3 py-1 rounded-full bg-blue-50 border border-blue-200/60 text-primary">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider font-bold">LIVE AUCTION</span>
+</div>
+<div class="hidden xl:flex items-center gap-space-xs text-on-surface-variant font-label-md text-label-md">
+<span class="text-slate-400">Session 14</span>
+<span class="text-slate-300">/</span>
+<span class="text-slate-800 font-semibold" id="session-lot-label">Lot #248 — Patek Philippe 5711/1R</span>
+</div>
+</div>
+<nav class="hidden lg:flex items-center p-1 rounded-full bg-slate-100/90 border border-slate-200" data-active-classes="bg-primary text-white font-semibold rounded-full shadow-sm"><a aria-current="page" class="px-space-md py-1.5 transition-colors bg-primary text-white font-semibold rounded-full shadow-sm" data-path="live-auctions" href="live-auction.html">Live Auctions</a>
+<a class="px-space-md py-1.5 text-slate-600 font-label-md text-label-md hover:text-slate-900 transition-colors" data-path="sell" href="sell.html">Sell</a></nav>
+<div class="flex items-center gap-space-md shrink-0">
+<div class="flex items-center gap-space-sm pl-space-sm">
+<div class="text-right hidden md:block">
+<div class="font-label-sm text-label-sm text-slate-500 font-semibold">PADDLE ID</div>
+<div class="font-headline-sm text-headline-sm text-amber-600 font-bold">#8492</div>
+</div>
+<div class="relative">
+<a href="profile.html"><img alt="Profile" class="w-9 h-9 rounded-full object-cover ring-2 ring-slate-200 cursor-pointer hover:ring-primary transition-all" src="https://lh3.googleusercontent.com/aida/ALJJyrAhoX5W4abndDkmZ2XCkkHcgcUiINghN7_PM_tErSPaow9kEOnspGvKLfB7pfczMcqUqxQpvYXd2GAmgQOyxSVmj6Z5IwQL7k7deXJJmFwO4lJptaz9jQQ6d5LzT8ixlNLbMCIDXhIcKcJ06yXxFwG-tL31pVObhSKWuBFhrZoBs1GggyqagQni0wcppSSDP1BNYcCQw6e1KKC5oNQDjH8kNHl_kXGiNIs5IFXhK7aS"></a>
+<span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-blue-600 ring-2 ring-white"></span>
+</div>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content Stage -->
+<main class="w-full pt-24 bg-background min-h-screen">
+<div class="flex flex-col w-full pb-10">
+<div class="w-full px-margin py-space-md">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter items-start">
+<!-- LEFT / CENTER MAIN STAGE (7 COLS) -->
+<div class="lg:col-span-7 flex flex-col gap-gutter">
+<!-- Showcase Stage Container -->
+<div class="relative w-full rounded-2xl bg-white border border-slate-200/90 shadow-[0_4px_24px_rgba(15,23,42,0.06)] overflow-hidden">
+<!-- Top Overlay Bar on Stream/Stage -->
+<div class="absolute top-0 left-0 right-0 p-space-md flex flex-wrap items-center justify-between gap-space-sm z-20 bg-gradient-to-b from-slate-900/60 to-transparent">
+<div class="flex items-center gap-space-xs">
+<span class="px-3 py-1 rounded-full bg-white/90 backdrop-blur-md text-slate-800 font-label-sm text-label-sm tracking-wider uppercase font-semibold shadow-sm" id="lot-count-badge">
+                    LOT 14 of 28 • Vault Certified
+                  </span>
+<span class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-600/90 backdrop-blur-md text-white font-label-sm text-label-sm font-semibold shadow-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
+                    LIVE FLOOR SALEROOM
+                  </span>
+</div>
+<!-- Urgent Countdown Timer -->
+<div class="flex items-center gap-2 px-space-md py-1 rounded-full bg-white/95 backdrop-blur-md text-amber-600 font-label-md text-label-md tracking-wider shadow-sm border border-amber-200/80 bg-amber-100 ring-2 ring-amber-500" id="hammer-timer">
+<span class="material-symbols-outlined text-amber-600 text-body-md animate-pulse">timer</span>
+<span class="text-slate-600 font-label-sm text-label-sm uppercase font-semibold">HAMMER IN:</span>
+<span class="font-headline-sm text-headline-sm font-bold text-amber-600 tabular-nums" id="timer-display">00:00</span>
+</div>
+</div>
+<!-- Hero Image & Interactive Focus Area -->
+<div class="relative w-full aspect-[4/3] bg-slate-950 flex items-center justify-center overflow-hidden group">
+<img alt="Hublot King Power 48mm Skeleton Chronograph with Tourbillon in Rose Gold on Slate Pedestal" class="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" id="lot-hero-img" src="https://lh3.googleusercontent.com/aida/ALJJyrAhoX5W4abndDkmZ2XCkkHcgcUiINghN7_PM_tErSPaow9kEOnspGvKLfB7pfczMcqUqxQpvYXd2GAmgQOyxSVmj6Z5IwQL7k7deXJJmFwO4lJptaz9jQQ6d5LzT8ixlNLbMCIDXhIcKcJ06yXxFwG-tL31pVObhSKWuBFhrZoBs1GggyqagQni0wcppSSDP1BNYcCQw6e1KKC5oNQDjH8kNHl_kXGiNIs5IFXhK7aS">
+<div class="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent pointer-events-none"></div>
+<!-- Current Top Bid Floater (Bottom Left of Image) -->
+<div class="absolute bottom-space-md left-space-md z-20 flex flex-col gap-1 p-space-md rounded-xl bg-white/95 backdrop-blur-md shadow-xl border border-slate-200/80">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-slate-500 font-bold">CURRENT HIGH BID • RESERVE MET</span>
+<div class="flex items-baseline gap-space-xs">
+<span class="font-numeral-hero text-numeral-hero text-primary font-extrabold tracking-tight" id="display-current-bid">$142,500</span>
+<span class="font-label-md text-label-md text-primary font-bold">USD</span>
+</div>
+<div class="flex items-center gap-1.5 text-slate-600 font-body-sm text-body-sm">
+<span class="w-2.5 h-2.5 rounded-full bg-primary ring-2 ring-blue-100"></span>
+<span>Led by Paddle <strong class="text-slate-900 font-bold">#7701 (Geneva Salon)</strong></span>
+</div>
+</div>
+
+
+</div>
+<!-- Active Lot Title & Key Provenance Metadata Bar -->
+<div class="p-space-lg flex flex-col gap-space-md bg-white">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-sm border-b border-slate-100 pb-space-md">
+<div>
+<span class="font-label-sm text-label-sm text-amber-700 uppercase tracking-widest font-bold" id="lot-reference">Reference 706.OX.1180.RX • Tourbillon Chrono</span>
+<h1 class="font-headline-lg text-headline-lg text-slate-900 font-extrabold tracking-tight mt-0.5" id="lot-title">Hublot King Power 48mm Skeleton Chronograph</h1>
+</div>
+<div class="flex items-center gap-space-sm shrink-0">
+<div class="text-right bg-slate-50 border border-slate-200/60 p-2.5 rounded-xl">
+<div class="font-label-sm text-label-sm text-slate-500 uppercase font-semibold">Auction Estimate</div>
+<div class="font-headline-sm text-headline-sm text-slate-900 font-bold" id="lot-estimate">$150,000 – $180,000</div>
+</div>
+</div>
+</div>
+<!-- Provenance & Specs Bento Tiles -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-space-sm pt-space-xs">
+<div class="p-space-sm rounded-xl bg-slate-50 border border-slate-200/70 flex flex-col gap-0.5">
+<span class="font-label-sm text-label-sm text-slate-500 uppercase font-semibold" id="spec-label-0">Case / Bezel</span>
+<span class="font-label-lg text-label-lg text-slate-900 font-bold truncate" id="spec-value-0">18K King Gold 48mm</span>
+</div>
+<div class="p-space-sm rounded-xl bg-slate-50 border border-slate-200/70 flex flex-col gap-0.5">
+<span class="font-label-sm text-label-sm text-slate-500 uppercase font-semibold" id="spec-label-1">Calibre</span>
+<span class="font-label-lg text-label-lg text-slate-900 font-bold truncate" id="spec-value-1">HUB6300 Skeleton</span>
+</div>
+<div class="p-space-sm rounded-xl bg-blue-50/70 border border-blue-100 flex flex-col gap-0.5">
+<span class="font-label-sm text-label-sm text-blue-700 uppercase font-semibold" id="spec-label-2">Condition</span>
+<span class="font-label-lg text-label-lg text-primary font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-body-sm text-primary">verified</span>
+<span id="spec-value-2">Grade A+ (Mint)</span>
+</span>
+</div>
+<div class="p-space-sm rounded-xl bg-amber-50/70 border border-amber-100 flex flex-col gap-0.5">
+<span class="font-label-sm text-label-sm text-amber-700 uppercase font-semibold" id="spec-label-3">Escrow Custody</span>
+<span class="font-label-lg text-label-lg text-amber-800 font-bold truncate" id="spec-value-3">Zurich Vault #04</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Detailed Specifications Accordion / Lot Dossier -->
+<div class="p-space-lg rounded-2xl bg-white border border-slate-200/90 shadow-[0_4px_24px_rgba(15,23,42,0.06)] flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-headline-sm">shield_with_heart</span>
+<h2 class="font-headline-sm text-headline-sm text-slate-900 font-bold">Saleroom Dossier &amp; Authenticity Protocol</h2>
+</div>
+<span class="px-space-sm py-1 rounded-full bg-blue-50 border border-blue-200 text-primary font-label-sm text-label-sm uppercase font-bold">
+                  Verified by FHH Horologists
+                </span>
+</div>
+<p class="font-body-md text-body-md text-slate-600 leading-relaxed" id="lot-description">
+                Consigned directly from a premier private collection in Saint-Moritz. This Hublot King Power Tourbillon Chrono features an open-worked dial presenting the balance spring at 6 o'clock and a mono-pusher column wheel arrangement. Accompanied by original titanium-embossed presentation chest, certified warranty certificates, and dual bespoke rubber alligator deployment straps.
+              </p>
+<div class="flex flex-wrap items-center gap-space-lg pt-space-xs text-slate-600 font-body-sm text-body-sm border-t border-slate-100">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary text-body-md">lock</span>
+<span class="font-medium">100% Escrow Collateral Locked</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary text-body-md">local_shipping</span>
+<span class="font-medium">Insured Armored Freight (Ferrari Logistics)</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-amber-600 text-body-md">policy</span>
+<span class="font-medium">Buyer's Premium: 12% Flat</span>
+</div>
+</div>
+</div>
+</div>
+<!-- RIGHT COLUMN: LIVE CHAT & CONSOLE (5 COLS) -->
+<div class="lg:col-span-5 flex flex-col gap-gutter">
+<!-- Live Auction Chat & System Bid Ledger Stream -->
+<div class="rounded-2xl bg-white border border-slate-200/90 shadow-[0_4px_24px_rgba(15,23,42,0.06)] flex flex-col overflow-hidden">
+<!-- Saleroom Live Header -->
+<div class="px-space-md py-space-sm bg-slate-50 border-b border-slate-200/80 flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="w-2.5 h-2.5 rounded-full bg-primary animate-pulse"></span>
+<span class="font-label-lg text-label-lg text-slate-900 font-bold">Saleroom Synchronous Stream</span>
+</div>
+<div class="flex items-center gap-space-xs text-slate-500 font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-body-sm text-primary">group</span>
+<span>342 Floor &amp; Web Bidders</span>
+</div>
+</div>
+<!-- Feed Messages List -->
+<div class="p-space-md flex flex-col gap-space-sm h-[320px] overflow-y-auto bg-slate-50/50" id="bid-stream-feed">
+<!-- Event 1: System Bid Notice -->
+<div class="p-space-xs px-space-sm rounded-xl bg-white border border-slate-200/70 flex items-center justify-between text-slate-800 shadow-xs">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-body-md">gavel</span>
+<span class="font-label-sm text-label-sm text-slate-500 font-medium">FLOOR CLERK • Zurich:</span>
+<span class="font-label-md text-label-md font-bold text-primary">Bid advanced to $137,500</span>
+</div>
+<span class="font-label-sm text-label-sm text-slate-400">14:22:04</span>
+</div>
+<!-- Message 2: Collector Comment -->
+<div class="flex items-start gap-space-xs px-space-xs py-1">
+<div class="w-7 h-7 rounded-full bg-blue-100 text-primary flex items-center justify-center font-label-sm text-label-sm font-bold shrink-0">MV</div>
+<div class="flex flex-col">
+<div class="flex items-baseline gap-space-xs">
+<span class="font-label-sm text-label-sm font-bold text-slate-900">marcus_v</span>
+<span class="font-label-sm text-label-sm text-slate-400">Paddle #6204</span>
+</div>
+<p class="font-body-sm text-body-sm text-slate-600">The King Gold tone under studio light is extraordinary.</p>
+</div>
+</div>
+<!-- Event 3: Floor Lead Change -->
+<div class="p-space-xs px-space-sm rounded-xl bg-white border border-slate-200/70 flex items-center justify-between text-slate-800 shadow-xs">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-amber-600 text-body-md">north_east</span>
+<span class="font-label-sm text-label-sm text-slate-500 font-medium">PADDLE #4419 (London):</span>
+<span class="font-label-md text-label-md font-bold text-amber-600">Bid placed $140,000</span>
+</div>
+<span class="font-label-sm text-label-sm text-slate-400">14:22:18</span>
+</div>
+<!-- Event 4: Current Leading Bid Announcement -->
+<div class="p-space-sm rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-between text-slate-900 shadow-xs">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-headline-sm">check_circle</span>
+<div>
+<div class="font-label-sm text-label-sm text-primary uppercase font-extrabold tracking-wider">CURRENT LEADER</div>
+<div class="font-label-md text-label-md text-slate-800 font-semibold">@collector_geneva (#7701) holds <strong class="text-primary font-bold">$142,500</strong></div>
+</div>
+</div>
+<span class="font-label-sm text-label-sm text-primary font-bold">Just now</span>
+</div>
+<!-- Message 5: Community excitement -->
+<div class="flex items-start gap-space-xs px-space-xs py-1">
+<div class="w-7 h-7 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-label-sm text-label-sm font-bold shrink-0">AL</div>
+<div class="flex flex-col">
+<div class="flex items-baseline gap-space-xs">
+<span class="font-label-sm text-label-sm font-bold text-slate-900">antoine_lux</span>
+<span class="font-label-sm text-label-sm text-slate-400">Paddle #8012</span>
+</div>
+<p class="font-body-sm text-body-sm text-slate-600">Reserve officially passed! Going to the hammer now.</p>
+</div>
+</div>
+</div>
+<!-- Fast Reaction Buttons & Input Field -->
+<div class="p-space-sm bg-slate-50 border-t border-slate-200/80 flex flex-col gap-space-xs">
+<div class="flex items-center gap-space-xs overflow-x-auto no-scrollbar">
+<button class="px-2.5 py-1 rounded-full bg-white hover:bg-slate-100 border border-slate-200 text-body-sm transition-transform active:scale-90 shadow-2xs shrink-0" onclick="sendQuickReaction('🔥')">🔥</button>
+<button class="px-2.5 py-1 rounded-full bg-white hover:bg-slate-100 border border-slate-200 text-body-sm transition-transform active:scale-90 shadow-2xs shrink-0" onclick="sendQuickReaction('💎')">💎</button>
+<button class="px-2.5 py-1 rounded-full bg-white hover:bg-slate-100 border border-slate-200 text-body-sm transition-transform active:scale-90 shadow-2xs shrink-0" onclick="sendQuickReaction('👏')">👏</button>
+<button class="px-2.5 py-1 rounded-full bg-white hover:bg-slate-100 border border-slate-200 text-body-sm transition-transform active:scale-90 shadow-2xs shrink-0" onclick="sendQuickReaction('🔨')">🔨</button>
+<button class="px-2.5 py-1 rounded-full bg-white hover:bg-slate-100 border border-slate-200 text-body-sm transition-transform active:scale-90 shadow-2xs shrink-0" onclick="sendQuickReaction('👠')">👠</button>
+<button class="px-2.5 py-1 rounded-full bg-white hover:bg-slate-100 border border-slate-200 text-body-sm transition-transform active:scale-90 shadow-2xs shrink-0" onclick="sendQuickReaction('⌚')">⌚</button>
+<button class="px-2.5 py-1 rounded-full bg-white hover:bg-slate-100 border border-slate-200 text-body-sm transition-transform active:scale-90 shadow-2xs shrink-0" onclick="sendQuickReaction('💍')">💍</button>
+<button class="px-2.5 py-1 rounded-full bg-white hover:bg-slate-100 border border-slate-200 text-body-sm transition-transform active:scale-90 shadow-2xs shrink-0" onclick="sendQuickReaction('🥂')">🥂</button>
+<button class="px-2.5 py-1 rounded-full bg-white hover:bg-slate-100 border border-slate-200 text-body-sm transition-transform active:scale-90 shadow-2xs shrink-0" onclick="sendQuickReaction('💰')">💰</button>
+<button class="px-2.5 py-1 rounded-full bg-white hover:bg-slate-100 border border-slate-200 text-body-sm transition-transform active:scale-90 shadow-2xs shrink-0" onclick="sendQuickReaction('👑')">👑</button>
+<span class="text-slate-400 font-label-sm text-label-sm ml-auto font-medium">End-to-End Encrypted Room</span>
+</div>
+<form class="flex items-center gap-space-xs mt-1" onsubmit="handleSaleroomChat(event)">
+<input class="flex-1 bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 font-body-sm text-body-sm px-space-md py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary shadow-xs" id="saleroom-chat-input" placeholder="Send authenticated message to auctioneer..." type="text">
+<button class="p-2.5 rounded-xl bg-primary text-white hover:bg-blue-700 transition-colors shadow-sm" type="submit">
+<span class="material-symbols-outlined text-body-md">send</span>
+</button>
+</form>
+</div>
+</div>
+<!-- Dedicated LIVE FLOOR BIDDING CONSOLE -->
+<div class="rounded-2xl bg-white border border-slate-200/90 p-space-lg shadow-[0_8px_30px_rgba(15,23,42,0.08)] flex flex-col gap-space-md relative overflow-hidden">
+<!-- Background Glow Effect for Console -->
+<div class="absolute -top-16 -right-16 w-40 h-40 bg-blue-100/60 rounded-full blur-2xl pointer-events-none"></div>
+<!-- Console Header & User Status -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-slate-900 font-extrabold">Live Bidding Console</h3>
+<span class="font-label-sm text-label-sm text-slate-500">Tap increment or enter custom ceiling</span>
+</div>
+</div>
+<div class="px-space-sm py-1 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 font-label-md text-label-md font-bold flex items-center gap-1 shadow-2xs">
+<span>PADDLE</span>
+<span>#8492</span>
+</div>
+</div>
+<!-- Next Increment Selector Pills -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-sm text-label-sm text-slate-500 uppercase tracking-wider font-bold">Select Saleroom Increment</label>
+<div class="grid grid-cols-3 gap-space-xs">
+<button class="increment-btn active-increment p-space-sm rounded-xl bg-blue-50/80 border-2 border-primary text-left transition-all hover:bg-blue-50 flex flex-col shadow-xs" onclick="selectIncrement(145000, this)" type="button">
+<span class="font-label-sm text-label-sm text-primary font-extrabold">+ $2,500</span>
+<span class="font-headline-sm text-headline-sm text-slate-900 font-extrabold mt-0.5">$145,000</span>
+<span class="font-label-sm text-label-sm text-slate-500 font-medium">Standard Step</span>
+</button>
+<button class="increment-btn p-space-sm rounded-xl bg-slate-50 border border-slate-200 text-left transition-all hover:bg-slate-100 flex flex-col shadow-2xs" onclick="selectIncrement(147500, this)" type="button">
+<span class="font-label-sm text-label-sm text-amber-600 font-bold">+ $5,000</span>
+<span class="font-headline-sm text-headline-sm text-slate-900 font-extrabold mt-0.5">$147,500</span>
+<span class="font-label-sm text-label-sm text-slate-500 font-medium">Power Jump</span>
+</button>
+<button class="increment-btn p-space-sm rounded-xl bg-slate-50 border border-slate-200 text-left transition-all hover:bg-slate-100 flex flex-col shadow-2xs" onclick="selectIncrement(152500, this)" type="button">
+<span class="font-label-sm text-label-sm text-blue-600 font-bold">+ $10,000</span>
+<span class="font-headline-sm text-headline-sm text-slate-900 font-extrabold mt-0.5">$152,500</span>
+<span class="font-label-sm text-label-sm text-slate-500 font-medium">Floor Hammer Cut</span>
+</button>
+</div>
+</div>
+<!-- Custom Ceiling / Bid Input Field -->
+<div class="flex flex-col gap-1">
+<div class="flex items-center justify-between">
+<label class="font-label-sm text-label-sm text-slate-500 uppercase tracking-wider font-bold" for="custom-bid-input">Custom Offer (USD)</label>
+<span class="font-label-sm text-label-sm text-slate-500 font-medium" id="custom-bid-min-label">Min: $145,000</span>
+</div>
+<div class="relative flex items-center">
+<span class="absolute left-space-md font-headline-sm text-headline-sm text-slate-400 font-bold">$</span>
+<input class="w-full pl-8 pr-space-md py-3 rounded-xl bg-slate-50 border border-slate-200 font-headline-sm text-headline-sm text-slate-900 font-extrabold focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all shadow-inner" id="custom-bid-input" min="145000" oninput="syncCustomBid(this.value)" step="500" type="number" value="145000">
+</div>
+</div>
+<!-- PRIMARY ACTION: RAISE HAND & BID BUTTON -->
+<button class="group w-full py-4 px-space-lg rounded-full bg-primary hover:bg-blue-700 text-white font-headline-sm text-headline-sm font-extrabold shadow-[0_8px_20px_rgba(37,99,235,0.35)] hover:shadow-[0_12px_24px_rgba(37,99,235,0.45)] transition-all duration-200 transform active:scale-[0.98] flex items-center justify-center gap-space-sm" id="bid-submit-btn" onclick="executeBid()">
+<span class="material-symbols-outlined text-[24px] group-hover:-translate-y-0.5 transition-transform">pan_tool</span>
+<span id="bid-btn-text">Raise Hand • Bid $145,000</span>
+</button>
+<!-- Escrow Vault & Paddle Verification Safeguard -->
+<div class="p-space-sm rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-slate-600 font-body-sm text-body-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-body-md">lock</span>
+<span>Available Vault Escrow: <strong class="text-slate-900 font-bold">$350,000 USD</strong></span>
+</div>
+<a class="text-primary hover:text-blue-700 font-label-sm text-label-sm font-bold underline" href="#">Deposit Funds</a>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script src="../js/catalog.js" defer></script>
+<script src="../js/live-auction.js" defer></script>
+</div>
+</main>
+<footer class="w-full bg-white border-t border-slate-200 mt-space-xl">
+<div class="w-full px-margin py-space-xl flex flex-col md:flex-row items-center justify-between gap-space-md text-slate-500 font-body-sm text-body-sm">
+<div>© 2025 <span class="font-bold tracking-[0.2em] text-slate-800">VELA</span> S.A. High-Value Synchronous Saleroom Protocol.</div>
+<div class="flex items-center gap-space-lg">
+<span class="text-slate-800 font-label-sm text-label-sm uppercase tracking-wider font-bold">Escrow Tier 1 Protected</span>
+<span class="text-slate-300">•</span>
+<span class="font-medium">Zurich — Geneva — London — New York</span>
+</div>
+</div>
+</footer>
+
+
+</body></html>

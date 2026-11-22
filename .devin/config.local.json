@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Exec(grep)",
+      "Exec(node)",
+      "Exec(curl)",
+      "Exec(sleep)"
+    ]
+  }
+}
