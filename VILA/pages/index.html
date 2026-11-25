@@ -257,6 +257,20 @@
 </div>
 </section>
 </div>
+<script src="../js/catalog.js"></script>
+<script>
+  // Pick a random lot from catalog when "Enter Live Saleroom" is clicked
+  document.querySelectorAll('a[href^="live-auction.html"]').forEach(link => {
+    link.addEventListener('click', (e) => {
+      if (window.VELA_CATALOG) {
+        e.preventDefault();
+        const allLots = window.VELA_CATALOG.flatMap(dept => dept.items);
+        const randomLot = allLots[Math.floor(Math.random() * allLots.length)];
+        window.location.href = `live-auction.html?lot=${randomLot.lotId}`;
+      }
+    });
+  });
+</script>
 <script src="../js/index.js" defer></script></main><footer class="w-full bg-surface-container-lowest shadow-[0_-1px_8px_rgba(0,0,0,0.02)] mt-space-xl"><div class="max-w-[1440px] mx-auto px-margin-lg py-space-xl"><div class="grid grid-cols-1 md:grid-cols-5 gap-gutter-lg mb-space-xl"><div class="md:col-span-2 space-y-space-sm"><div class="flex items-center"><span class="font-bold text-headline-md tracking-widest uppercase text-on-surface">VELA</span><span class="w-1.5 h-1.5 rounded-full bg-primary-container ml-1 mb-0.5"></span></div><p class="font-body-sm text-body-sm text-on-surface-variant max-w-sm">Premier synchronous digital auction house connecting institutional collectors and private estates with real-time provenance verification.</p></div><div><h4 class="font-label-md text-label-md text-on-surface mb-space-sm uppercase tracking-wider">Auctions</h4><ul class="space-y-space-xs font-body-sm text-body-sm"><li class="text-on-surface-variant">Live Bidding Salons</li><li class="text-on-surface-variant">Private Treaty</li><li class="text-on-surface-variant">Valuation Estimates</li></ul></div><div><h4 class="font-label-md text-label-md text-on-surface mb-space-sm uppercase tracking-wider">Consignment</h4><ul class="space-y-space-xs font-body-sm text-body-sm"><li class="text-on-surface-variant">Consign Fine Art</li><li class="text-on-surface-variant">Estates &amp; Appraisals</li><li class="text-on-surface-variant">Fee Schedule</li><li class="text-on-surface-variant">Curatorial Services</li></ul></div><div><h4 class="font-label-md text-label-md text-on-surface mb-space-sm uppercase tracking-wider">Trust &amp; Security</h4><div class="space-y-space-xs"><div class="flex items-center gap-space-xs text-on-surface-variant font-body-sm text-body-sm"><span class="material-symbols-outlined text-[18px] text-primary-container">lock</span>256-Bit SSL Live Terminal</div><div class="flex items-center gap-space-xs text-on-surface-variant font-body-sm text-body-sm"><span class="material-symbols-outlined text-[18px] text-primary-container">security</span>SOC-2 Type II Certified</div><div class="flex items-center gap-space-xs text-on-surface-variant font-body-sm text-body-sm"><span class="material-symbols-outlined text-[18px] text-primary-container">fingerprint</span>Biometric Bid Signing</div></div></div></div><div class="pt-space-md flex flex-col md:flex-row items-center justify-between gap-space-md font-body-sm text-body-sm text-on-surface-variant"><p>© 2025 VELA Synchronous Auctions Ltd. All international rights reserved.</p><div class="flex items-center gap-space-lg"><span class="hover:text-on-surface transition-colors cursor-pointer">Provenance Terms</span><span class="hover:text-on-surface transition-colors cursor-pointer">Privacy Statement</span><span class="hover:text-on-surface transition-colors cursor-pointer">Bidder Agreement</span><span class="hover:text-on-surface transition-colors cursor-pointer">Compliance &amp; KYC</span></div></div></div></footer>
 
 </body></html>
