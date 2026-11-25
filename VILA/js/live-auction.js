@@ -183,12 +183,16 @@ function appendReactionEntry(emoji, userName) {
   feed.scrollTop = feed.scrollHeight;
 }
 
-function appendSystemNote(text) {
+function appendSystemNote(text, variant = 'primary') {
   const feed = document.getElementById('bid-stream-feed');
   const el = document.createElement('div');
   el.className = "px-space-xs py-1 text-center";
   const span = document.createElement('span');
-  span.className = "font-label-sm text-label-sm text-red-600 font-semibold bg-red-50 border border-red-200 rounded-full px-3 py-1 inline-block";
+  if (variant === 'error') {
+    span.className = "font-label-sm text-label-sm text-red-600 font-semibold bg-red-50 border border-red-200 rounded-full px-3 py-1 inline-block";
+  } else {
+    span.className = "font-label-sm text-label-sm text-primary font-semibold bg-primary-fixed border border-primary-fixed-dim rounded-full px-3 py-1 inline-block";
+  }
   span.textContent = text;
   el.appendChild(span);
   feed.appendChild(el);
@@ -199,7 +203,7 @@ function appendSystemNote(text) {
 
 function executeBid() {
   if (auctionEnded || (auctionState && auctionState.auctionStatus === 'closed')) {
-    appendSystemNote('This auction has closed. Bidding is no longer accepted.');
+    appendSystemNote('This auction has closed. Bidding is no longer accepted.', 'error');
     return;
   }
   if (!currentLotId) {
@@ -211,7 +215,7 @@ function executeBid() {
     const isCalled = String(myPaddle) === String(auctionCall.turnPaddle);
     const isLeading = String(myPaddle) === String(auctionCall.leaderPaddle);
     if (!isCalled && !isLeading) {
-      appendSystemNote(`Floor call — ${escapeHtml(auctionCall.turnBidder || auctionCall.turnPaddle)} (${escapeHtml(auctionCall.turnPaddle)}) is on the clock. Wait for the call to resolve.`);
+      appendSystemNote(`Floor call — ${escapeHtml(auctionCall.turnBidder || auctionCall.turnPaddle)} (${escapeHtml(auctionCall.turnPaddle)}) is on the clock. Wait for the call to resolve.`, 'primary');
       return;
     }
   }
@@ -338,14 +342,14 @@ function handleWSMessage(msg) {
         setText('display-current-bid', fmtMoney(msg.leaderAmount));
         renderAuctionUI();
         const who = msg.turnBidder || msg.turnPaddle || 'the floor';
-        appendSystemNote(`📢 CALL ${msg.callNumber} — ${who}, you're on the clock. Lead: ${msg.leaderBidder} at ${fmtMoney(msg.leaderAmount)}`);
+        appendSystemNote(`📢 CALL ${msg.callNumber} — ${who}, you're on the clock. Lead: ${msg.leaderBidder} at ${fmtMoney(msg.leaderAmount)}`, 'primary');
       }
       break;
     case 'auction_won':
       if (sameLot(msg.lotId, currentLotId)) {
         auctionCall = null;
         callDeadline = null;
-        appendSystemNote(`🔨 ${msg.winnerBidder || msg.winnerPaddle} (${msg.winnerPaddle}) won the lot at ${fmtMoney(msg.winningBid || 0)} — decided by the floor call.`);
+        appendSystemNote(`🔨 ${msg.winnerBidder || msg.winnerPaddle} (${msg.winnerPaddle}) won the lot at ${fmtMoney(msg.winningBid || 0)} — decided by the floor call.`, 'primary');
       }
       break;
     case 'auction_closed':
@@ -363,7 +367,7 @@ function handleWSMessage(msg) {
         };
         renderAuctionUI();
         setText('display-current-bid', fmtMoney(msg.winningBid || 0));
-        appendSystemNote(`🔨 AUCTION CLOSED — Won by ${msg.winner || 'no bids'} at ${fmtMoney(msg.winningBid || 0)}`);
+        appendSystemNote(`🔨 AUCTION CLOSED — Won by ${msg.winner || 'no bids'} at ${fmtMoney(msg.winningBid || 0)}`, 'primary');
         if (bidBtn) {
           bidBtn.disabled = true;
           bidBtn.classList.add('opacity-50', 'cursor-not-allowed');
@@ -382,10 +386,10 @@ function handleWSMessage(msg) {
       appendReactionEntry(msg.emoji, msg.user || 'Guest');
       break;
     case 'bid_ack':
-      if (!msg.ok) appendSystemNote(`Bid rejected: ${msg.error || 'invalid bid'}`);
+      if (!msg.ok) appendSystemNote(`Bid rejected: ${msg.error || 'invalid bid'}`, 'error');
       break;
     case 'chat_ack':
-      if (!msg.ok) appendSystemNote(`Message rejected: ${msg.error || 'invalid'}`);
+      if (!msg.ok) appendSystemNote(`Message rejected: ${msg.error || 'invalid'}`, 'error');
       break;
     case 'error':
       console.warn('Server WS error:', msg.message);
