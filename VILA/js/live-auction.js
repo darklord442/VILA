@@ -342,14 +342,14 @@ function handleWSMessage(msg) {
         setText('display-current-bid', fmtMoney(msg.leaderAmount));
         renderAuctionUI();
         const who = msg.turnBidder || msg.turnPaddle || 'the floor';
-        appendSystemNote(`📢 CALL ${msg.callNumber} — ${who}, you're on the clock. Lead: ${msg.leaderBidder} at ${fmtMoney(msg.leaderAmount)}`, 'primary');
+        appendSystemNote(`CALL ${msg.callNumber} — ${who}, you're on the clock. Lead: ${msg.leaderBidder} at ${fmtMoney(msg.leaderAmount)}`, 'primary');
       }
       break;
     case 'auction_won':
       if (sameLot(msg.lotId, currentLotId)) {
         auctionCall = null;
         callDeadline = null;
-        appendSystemNote(`🔨 ${msg.winnerBidder || msg.winnerPaddle} (${msg.winnerPaddle}) won the lot at ${fmtMoney(msg.winningBid || 0)} — decided by the floor call.`, 'primary');
+        appendSystemNote(`${msg.winnerBidder || msg.winnerPaddle} (${msg.winnerPaddle}) won the lot at ${fmtMoney(msg.winningBid || 0)} — decided by the floor call.`, 'primary');
       }
       break;
     case 'auction_closed':
@@ -367,7 +367,7 @@ function handleWSMessage(msg) {
         };
         renderAuctionUI();
         setText('display-current-bid', fmtMoney(msg.winningBid || 0));
-        appendSystemNote(`🔨 AUCTION CLOSED — Won by ${msg.winner || 'no bids'} at ${fmtMoney(msg.winningBid || 0)}`, 'primary');
+        appendSystemNote(`AUCTION CLOSED — Won by ${msg.winner || 'no bids'} at ${fmtMoney(msg.winningBid || 0)}`, 'primary');
         if (bidBtn) {
           bidBtn.disabled = true;
           bidBtn.classList.add('opacity-50', 'cursor-not-allowed');
