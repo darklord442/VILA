@@ -290,6 +290,10 @@ function handleWSMessage(msg) {
       break;
     case 'auction_state':
       if (sameLot(msg.lotId, currentLotId)) {
+        // Resync the client-side end time so the countdown matches the server
+        // (especially after anti-snipe extensions).
+        serverEndTime = msg.timeLeft ? Date.now() + msg.timeLeft : null;
+        lastSyncTime = Date.now();
         auctionState = {
           lotId: msg.lotId,
           auctionStatus: msg.auctionStatus,
@@ -347,9 +351,17 @@ function handleWSMessage(msg) {
 
 function onStateSync(state) {
   const lot = (state.lots || []).find(l => sameLot(l.lotId, currentLotId));
-  if (lot && lot.currentBid != null) {
-    setText('display-current-bid', fmtMoney(lot.currentBid));
-    setupBidConsole(lot.currentBid);
+  if (lot) {
+    if (lot.currentBid != null) {
+      setText('display-current-bid', fmtMoney(lot.currentBid));
+      setupBidConsole(lot.currentBid);
+    }
+    // Seed auction state from the initial WS handshake so the timer
+    // has data before the first REST poll lands.
+    if (auctionState) {
+      auctionState.currentBid = lot.currentBid;
+      auctionState.currentBidder = lot.highBidder || null;
+    }
   }
   (state.messages || [])
     .filter(m => sameLot(m.lotId, currentLotId))
@@ -410,9 +422,14 @@ connectWS();
 let auctionState = null;
 let auctionEnded = false;
 
+// Client-side interpolation so the timer ticks smoothly between polls
+let serverEndTime = null;   // absolute timestamp (ms) when the auction ends
+let lastSyncTime = null;    // when we last heard from the server
+
 const timerElem = document.getElementById('timer-display');
 const timerBox = document.getElementById('hammer-timer');
 const bidBtn = document.getElementById('bid-submit-btn');
+const noLotNotice = document.getElementById('no-active-lot');
 
 function formatTimeLeft(ms) {
   const totalSecs = Math.max(0, Math.floor(ms / 1000));
@@ -421,8 +438,27 @@ function formatTimeLeft(ms) {
   return `${m}:${s < 10 ? '0' : ''}${s}`;
 }
 
+function computeTimeLeft() {
+  if (!serverEndTime) return 0;
+  return Math.max(0, serverEndTime - Date.now());
+}
+
 function renderAuctionUI() {
   if (!timerElem || !timerBox) return;
+
+  // No lot selected -> show a clear message instead of a frozen timer
+  if (!currentLotId) {
+    timerBox.classList.remove('bg-blue-100', 'ring-2', 'ring-primary-container', 'bg-rose-50', 'border-rose-200');
+    timerElem.textContent = '--:--';
+    timerElem.className = 'font-headline-sm text-headline-sm font-bold text-slate-400 tabular-nums';
+    if (noLotNotice) noLotNotice.classList.remove('hidden');
+    if (bidBtn) {
+      bidBtn.disabled = true;
+      bidBtn.classList.add('opacity-50', 'cursor-not-allowed');
+    }
+    return;
+  }
+  if (noLotNotice) noLotNotice.classList.add('hidden');
 
   if (auctionEnded || (auctionState && auctionState.auctionStatus === 'closed')) {
     timerBox.classList.remove('bg-blue-100', 'ring-2', 'ring-primary-container');
@@ -439,7 +475,7 @@ function renderAuctionUI() {
     return;
   }
 
-  const timeLeft = auctionState ? auctionState.timeLeft : 0;
+  const timeLeft = computeTimeLeft();
   timerElem.textContent = formatTimeLeft(timeLeft);
 
   // Visual warning in final 10 seconds
@@ -468,10 +504,13 @@ async function fetchAuctionState() {
     const res = await fetch(`/api/auction/${currentLotId}/state`);
     const data = await res.json();
     if (data.status === 'success') {
+      serverEndTime = data.endTime ? new Date(data.endTime).getTime() : null;
+      lastSyncTime = Date.now();
+
       auctionState = {
         lotId: data.lotId,
         auctionStatus: data.auctionStatus,
-        timeLeft: data.timeLeft,
+        timeLeft: computeTimeLeft(),
         currentBid: data.currentBid,
         currentBidder: data.currentBidder,
         currentPaddle: data.currentPaddle,
@@ -483,8 +522,8 @@ async function fetchAuctionState() {
   }
 }
 
-// Poll auction state every second for the countdown
+// Poll auction state every second so all clients stay in sync
 setInterval(fetchAuctionState, 1000);
 
-// Initial fetch once WS is connected
+// Initial fetch
 fetchAuctionState();
