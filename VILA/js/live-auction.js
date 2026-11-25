@@ -572,14 +572,10 @@ function renderAuctionUI() {
     if (callTimer) {
       callTimer.textContent = formatTimeLeft(callTimeLeft);
       if (callTimeLeft <= 10000 && callTimeLeft > 0) {
-        callTimer.className = 'font-headline-sm text-headline-sm font-bold text-rose-600 tabular-nums animate-pulse';
-        callBanner.classList.add('border-rose-200', 'bg-rose-50');
-        callBanner.classList.remove('border-amber-200', 'bg-amber-50');
-      } else {
-        callTimer.className = 'font-headline-sm text-headline-sm font-bold text-amber-900 tabular-nums';
-        callBanner.classList.remove('border-rose-200', 'bg-rose-50');
-        callBanner.classList.add('border-amber-200', 'bg-amber-50');
-      }
+      callTimer.className = 'font-headline-sm text-headline-sm font-bold text-primary tabular-nums animate-pulse';
+    } else {
+      callTimer.className = 'font-headline-sm text-headline-sm font-bold text-primary tabular-nums';
+    }
     }
   } else if (callBanner) {
     callBanner.classList.add('hidden');
