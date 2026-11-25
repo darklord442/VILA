@@ -335,8 +335,11 @@ setInterval(() => {
     secondsLeft--;
     const formattedTime = '00:' + (secondsLeft < 10 ? '0' : '') + secondsLeft;
     if (timerElem) timerElem.innerText = formattedTime;
-    if (secondsLeft <= 15 && timerBox) {
+    if (secondsLeft <= 15 && secondsLeft > 0 && timerBox) {
       timerBox.classList.add('bg-amber-100', 'ring-2', 'ring-amber-500');
+    }
+    if (secondsLeft === 0 && timerBox) {
+      timerBox.classList.remove('bg-amber-100', 'ring-2', 'ring-amber-500');
     }
   }
 }, 1000);
