@@ -30,6 +30,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   const resetProfilePictureBtn = document.getElementById('resetProfilePictureBtn');
   const navProfileImg = document.querySelector('header img[alt="Profile"]');
 
+  // ---- account name ----
+  const accountNameInput = document.getElementById('accountNameInput');
+  const saveNameBtn = document.getElementById('saveNameBtn');
+  const nameSaveStatus = document.getElementById('nameSaveStatus');
+  const accountNameDisplay = document.querySelector('h1.font-headline-md');
+
   // Load saved profile picture from localStorage
   let profilePictureUrl = localStorage.getItem(`profilePicture_${userId}`);
 
@@ -319,8 +325,52 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  // Save display name
+  if (saveNameBtn && accountNameInput) {
+    const savedName = localStorage.getItem('accountName_' + userId);
+    if (savedName) {
+      accountNameInput.value = savedName;
+      if (accountNameDisplay) accountNameDisplay.textContent = savedName;
+    }
+
+    saveNameBtn.addEventListener('click', () => {
+      const newName = accountNameInput.value.trim();
+      if (!newName) {
+        nameSaveStatus.textContent = 'Name cannot be empty';
+        nameSaveStatus.className = 'text-[10px] text-rose-600 font-medium mt-0.5';
+        nameSaveStatus.classList.remove('hidden');
+        setTimeout(() => { nameSaveStatus.classList.add('hidden'); }, 2000);
+        return;
+      }
+      localStorage.setItem('accountName_' + userId, newName);
+      try {
+        const userRaw = localStorage.getItem('user');
+        if (userRaw) {
+          const u = JSON.parse(userRaw);
+          u.displayName = newName;
+          localStorage.setItem('user', JSON.stringify(u));
+        }
+      } catch (e) { console.error('Save display name error:', e); }
+      if (accountNameDisplay) accountNameDisplay.textContent = newName;
+      nameSaveStatus.textContent = 'Saved!';
+      nameSaveStatus.className = 'text-[10px] text-emerald-600 font-medium mt-0.5';
+      nameSaveStatus.classList.remove('hidden');
+      setTimeout(() => { nameSaveStatus.classList.add('hidden'); }, 2000);
+    });
+  }
+
   // ---- initial load ----
   loadPurchased();
   loadFavorites();
   showTab('purchased');
+
+  // Check for recent wins and refresh purchased if needed
+  try {
+    const recentWins = JSON.parse(localStorage.getItem('recentWins') || '[]');
+    if (recentWins.length > 0) {
+      // Clear after notifying
+      localStorage.removeItem('recentWins');
+      // Purchased items already loaded from server which has the record
+    }
+  } catch (e) {}
 });

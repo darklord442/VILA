@@ -349,7 +349,32 @@ function handleWSMessage(msg) {
       if (sameLot(msg.lotId, currentLotId)) {
         auctionCall = null;
         callDeadline = null;
-        appendSystemNote(`${msg.winnerBidder || msg.winnerPaddle} (${msg.winnerPaddle}) won the lot at ${fmtMoney(msg.winningBid || 0)} — decided by the floor call.`, 'primary');
+
+        // Check if the current user won
+        const userWon = msg.winnerPaddle && myPaddle && String(msg.winnerPaddle) === String(myPaddle);
+
+        if (userWon) {
+          // Mark as newly purchased so profile page can show it
+          const wonLotId = String(msg.lotId);
+          const recentWins = JSON.parse(localStorage.getItem('recentWins') || '[]');
+          if (!recentWins.includes(wonLotId)) {
+            recentWins.push(wonLotId);
+            localStorage.setItem('recentWins', JSON.stringify(recentWins));
+          }
+          appendSystemNote(`🎉 You won Lot #${wonLotId} at ${fmtMoney(msg.winningBid || 0)} — added to your Purchased Items!`, 'primary');
+
+          // Refresh the bid button to show closed state
+          const bidBtn = document.getElementById('bid-submit-btn');
+          if (bidBtn) {
+            bidBtn.disabled = true;
+            bidBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            bidBtn.classList.remove('hover:bg-blue-700');
+            const btnText = document.getElementById('bid-btn-text');
+            if (btnText) btnText.textContent = 'You Won!';
+          }
+        } else {
+          appendSystemNote(`${msg.winnerBidder || msg.winnerPaddle} (${msg.winnerPaddle}) won the lot at ${fmtMoney(msg.winningBid || 0)} — decided by the floor call.`, 'primary');
+        }
       }
       break;
     case 'auction_closed':
