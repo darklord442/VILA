@@ -206,6 +206,15 @@ function executeBid() {
     appendSystemNote('No active lot selected.');
     return;
   }
+  // Floor call: only the called paddle (or the current leader) may bid while a call is live
+  if (auctionCall && auctionCall.turnPaddle) {
+    const isCalled = String(myPaddle) === String(auctionCall.turnPaddle);
+    const isLeading = String(myPaddle) === String(auctionCall.leaderPaddle);
+    if (!isCalled && !isLeading) {
+      appendSystemNote(`Floor call — ${escapeHtml(auctionCall.turnBidder || auctionCall.turnPaddle)} (${escapeHtml(auctionCall.turnPaddle)}) is on the clock. Wait for the call to resolve.`);
+      return;
+    }
+  }
   if (wsConnected && ws && ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify({
       type: 'bid',
@@ -315,7 +324,33 @@ function handleWSMessage(msg) {
         renderAuctionUI();
       }
       break;
+    case 'auction_call':
+      if (sameLot(msg.lotId, currentLotId)) {
+        auctionCall = {
+          callNumber: msg.callNumber,
+          turnPaddle: msg.turnPaddle,
+          turnBidder: msg.turnBidder,
+          leaderPaddle: msg.leaderPaddle,
+          leaderBidder: msg.leaderBidder,
+          leaderAmount: msg.leaderAmount,
+        };
+        callDeadline = msg.timeLeft ? Date.now() + msg.timeLeft : null;
+        setText('display-current-bid', fmtMoney(msg.leaderAmount));
+        renderAuctionUI();
+        const who = msg.turnBidder || msg.turnPaddle || 'the floor';
+        appendSystemNote(`📢 CALL ${msg.callNumber} — ${who}, you're on the clock. Lead: ${msg.leaderBidder} at ${fmtMoney(msg.leaderAmount)}`);
+      }
+      break;
+    case 'auction_won':
+      if (sameLot(msg.lotId, currentLotId)) {
+        auctionCall = null;
+        callDeadline = null;
+        appendSystemNote(`🔨 ${msg.winnerBidder || msg.winnerPaddle} (${msg.winnerPaddle}) won the lot at ${fmtMoney(msg.winningBid || 0)} — decided by the floor call.`);
+      }
+      break;
     case 'auction_closed':
+      auctionCall = null;
+      callDeadline = null;
       if (sameLot(msg.lotId, currentLotId)) {
         auctionEnded = true;
         auctionState = {
@@ -431,12 +466,20 @@ connectWS();
 let auctionState = null;
 let auctionEnded = false;
 
+// Head-to-head floor call state: the server alternates the call between bidders
+let auctionCall = null;    // { callNumber, turnPaddle, turnBidder, leaderPaddle, leaderBidder, leaderAmount }
+let callDeadline = null;   // absolute timestamp (ms) when the current call expires
+
 // Client-side interpolation so the timer ticks smoothly between polls
 let serverEndTime = null;   // absolute timestamp (ms) when the auction ends
 let lastSyncTime = null;    // when we last heard from the server
 
 const timerElem = document.getElementById('timer-display');
 const timerBox = document.getElementById('hammer-timer');
+const callBanner = document.getElementById('auction-call-banner');
+const callDisplay = document.getElementById('call-display');
+const callTarget = document.getElementById('call-target');
+const callTimer = document.getElementById('call-timer');
 const bidBtn = document.getElementById('bid-submit-btn');
 const noLotNotice = document.getElementById('no-active-lot');
 
@@ -450,6 +493,11 @@ function formatTimeLeft(ms) {
 function computeTimeLeft() {
   if (!serverEndTime) return 0;
   return Math.max(0, serverEndTime - Date.now());
+}
+
+function computeCallTimeLeft() {
+  if (!callDeadline) return 0;
+  return Math.max(0, callDeadline - Date.now());
 }
 
 function renderAuctionUI() {
@@ -503,6 +551,56 @@ function renderAuctionUI() {
     const leaderBox = document.getElementById('current-leader');
     if (leaderBox) {
       leaderBox.innerHTML = `Led by <strong class="font-bold">${escapeHtml(auctionState.currentBidder)}</strong> at ${fmtMoney(auctionState.currentBid || 0)}`;
+    }
+  }
+
+  // Floor call banner: show whose turn the server is calling and the per-call countdown
+  if (auctionCall && currentLotId && !auctionEnded) {
+    const callTimeLeft = computeCallTimeLeft();
+    callBanner.classList.remove('hidden');
+
+    if (callDisplay) {
+      callDisplay.textContent = auctionCall.callNumber > 0 ? `CALL ${auctionCall.callNumber}` : 'FLOOR OPEN';
+    }
+    if (callTarget) {
+      if (auctionCall.turnPaddle) {
+        callTarget.textContent = `${escapeHtml(auctionCall.turnBidder || auctionCall.turnPaddle)} (${escapeHtml(auctionCall.turnPaddle)}) to answer`;
+      } else {
+        callTarget.textContent = 'Waiting for a challenger to answer';
+      }
+    }
+    if (callTimer) {
+      callTimer.textContent = formatTimeLeft(callTimeLeft);
+      if (callTimeLeft <= 10000 && callTimeLeft > 0) {
+        callTimer.className = 'font-headline-sm text-headline-sm font-bold text-rose-600 tabular-nums animate-pulse';
+        callBanner.classList.add('border-rose-200', 'bg-rose-50');
+        callBanner.classList.remove('border-amber-200', 'bg-amber-50');
+      } else {
+        callTimer.className = 'font-headline-sm text-headline-sm font-bold text-amber-900 tabular-nums';
+        callBanner.classList.remove('border-rose-200', 'bg-rose-50');
+        callBanner.classList.add('border-amber-200', 'bg-amber-50');
+      }
+    }
+  } else if (callBanner) {
+    callBanner.classList.add('hidden');
+  }
+
+  // Gate the bid button on the floor call: only the called paddle (or the
+  // current leader improving their own bid) may bid while a call is live.
+  if (bidBtn && auctionCall && auctionCall.turnPaddle && !auctionEnded) {
+    const isCalled = String(myPaddle) === String(auctionCall.turnPaddle);
+    const isLeading = String(myPaddle) === String(auctionCall.leaderPaddle);
+    if (!isCalled && !isLeading) {
+      bidBtn.disabled = true;
+      bidBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      bidBtn.classList.remove('hover:bg-blue-700');
+      const btnText = document.getElementById('bid-btn-text');
+      if (btnText) btnText.textContent = `Waiting on ${escapeHtml(auctionCall.turnBidder || auctionCall.turnPaddle)}...`;
+    } else if (!bidBtn.disabled) {
+      bidBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      bidBtn.classList.add('hover:bg-blue-700');
+      const btnText = document.getElementById('bid-btn-text');
+      if (btnText) btnText.textContent = `Raise Hand • Bid $${new Intl.NumberFormat('en-US').format(activeBidTarget)}`;
     }
   }
 }

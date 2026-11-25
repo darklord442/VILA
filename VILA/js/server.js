@@ -276,6 +276,8 @@ function getAuctionSession(lotId) {
 }
 
 function startFreshAuction(lotId, startingBid) {
+  // New round: clear any head-to-head call state from the previous round
+  auctionDuels.delete(String(lotId));
   auctionSessions.set(String(lotId), {
     lotId: String(lotId),
     endTime: Date.now() + AUCTION_DURATION_MS,
@@ -317,6 +319,80 @@ function closeAuction(lotId) {
   return session;
 }
 
+// ============ Auction Floor Call (head-to-head bidding duel) ============
+// The server alternates the call between bidders: the first bidder leads,
+// then the web calls the other person to answer. They go back and forth
+// until a countdown expires without an answer — the current leader wins.
+
+const DUEL_TURN_MS = 30 * 1000; // 30 seconds to answer each floor call
+
+const auctionDuels = new Map();
+
+function getDuel(lotId) {
+  return auctionDuels.get(String(lotId)) || null;
+}
+
+function newDuel(lotId, leaderPaddle, leaderBidder, leaderAmount) {
+  return {
+    lotId: String(lotId),
+    leaderPaddle, leaderBidder, leaderAmount,   // current high bidder
+    challengerPaddle: null, challengerBidder: null, // paddle the server is calling
+    callNumber: 0,
+    deadline: Date.now() + DUEL_TURN_MS,        // countdown starts on the opening bid
+    status: 'open',                              // open | decided
+    winnerPaddle: null, winnerBidder: null, winnerAmount: null,
+  };
+}
+
+function broadcastDuelCall(duel) {
+  const timeLeft = Math.max(0, duel.deadline - Date.now());
+  broadcast({
+    type: 'auction_call',
+    lotId: duel.lotId,
+    callNumber: duel.callNumber,
+    status: duel.status,
+    turnPaddle: duel.challengerPaddle,
+    turnBidder: duel.challengerBidder,
+    leaderPaddle: duel.leaderPaddle,
+    leaderBidder: duel.leaderBidder,
+    leaderAmount: duel.leaderAmount,
+    timeLeft,
+    ts: new Date().toISOString(),
+  });
+}
+
+function decideDuel(duel) {
+  duel.status = 'decided';
+  duel.winnerPaddle = duel.leaderPaddle;
+  duel.winnerBidder = duel.leaderBidder;
+  duel.winnerAmount = duel.leaderAmount;
+  duel.deadline = null;
+  return duel;
+}
+
+function broadcastDuelWon(duel) {
+  broadcast({
+    type: 'auction_won',
+    lotId: duel.lotId,
+    winnerPaddle: duel.winnerPaddle,
+    winnerBidder: duel.winnerBidder,
+    winningBid: duel.winnerAmount,
+    callNumber: duel.callNumber,
+    ts: new Date().toISOString(),
+  });
+  // Hammer falls: close the lot so no more bids are accepted
+  closeAuction(duel.lotId);
+  broadcast({
+    type: 'auction_closed',
+    lotId: duel.lotId,
+    winner: duel.winnerBidder,
+    winnerPaddle: duel.winnerPaddle,
+    winningBid: duel.winnerAmount,
+    ts: new Date().toISOString(),
+  });
+  console.log(`Lot #${duel.lotId} won by ${duel.winnerBidder} (${duel.winnerPaddle}) at $${duel.winnerAmount} after ${duel.callNumber} calls`);
+}
+
 // Close expired auctions every second and broadcast results
 setInterval(async () => {
   for (const [lotId, session] of auctionSessions.entries()) {
@@ -332,6 +408,14 @@ setInterval(async () => {
         ts: new Date().toISOString(),
       });
       console.log(`Auction closed for Lot #${lotId}. Winner: ${top ? top.bidder : 'none'} at $${top ? top.amount : 0}`);
+    }
+  }
+
+  // Decide head-to-head calls whose countdown expired — the timer picks the winner
+  for (const [lotId, duel] of auctionDuels.entries()) {
+    if (duel.status === 'open' && duel.deadline && Date.now() >= duel.deadline) {
+      decideDuel(duel);
+      broadcastDuelWon(duel);
     }
   }
 }, 1000);
@@ -382,6 +466,48 @@ async function placeBid(lotId, amount, bidder, paddle) {
     id: result.rows[0].id,
     ts: result.rows[0].created_at,
   };
+
+  // ============ Floor call: alternate the call between bidders ============
+  // 1st bid opens the floor. Then the web calls the other person to answer.
+  // They go back and forth until a countdown expires without an answer — the
+  // current leader wins the lot.
+  let duel = getDuel(key);
+
+  if (!duel) {
+    // Opening bid of the lot: open the floor, waiting for a challenger.
+    duel = newDuel(key, paddle || 'Anonymous Paddle', bidderName, num);
+    auctionDuels.set(key, duel);
+  } else if (duel.status === 'decided') {
+    return { ok: false, error: 'This lot has been sold. Bidding is closed.' };
+  } else {
+    const me = paddle || 'Anonymous Paddle';
+    const isLeader = String(me) === String(duel.leaderPaddle);
+    const isOnCall = duel.challengerPaddle && String(me) === String(duel.challengerPaddle);
+
+    if (isLeader) {
+      // Leader raises their own ceiling; the called paddle still answers.
+      duel.leaderAmount = num;
+      duel.deadline = Date.now() + DUEL_TURN_MS;
+    } else if (isOnCall || !duel.challengerPaddle) {
+      // Counter-bid: answer the call and take the lead; the call flips back.
+      const previousLeader = {
+        paddle: duel.leaderPaddle,
+        bidder: duel.leaderBidder,
+        amount: duel.leaderAmount,
+      };
+      duel.leaderPaddle = me;
+      duel.leaderBidder = bidderName;
+      duel.leaderAmount = num;
+      duel.challengerPaddle = previousLeader.paddle;
+      duel.challengerBidder = previousLeader.bidder;
+      duel.callNumber += 1;
+      duel.deadline = Date.now() + DUEL_TURN_MS;
+    } else {
+      return { ok: false, error: `Head-to-head call in progress — ${duel.challengerBidder} (${duel.challengerPaddle}) is on the clock. Wait for the call to resolve.` };
+    }
+  }
+
+  broadcastDuelCall(duel);
 
   // Anti-sniping: extend auction if a bid lands in the final 10 seconds
   const state = getAuctionState(key);
