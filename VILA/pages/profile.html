@@ -9,7 +9,6 @@
 <a class="px-space-md py-1.5 text-slate-600 font-label-md text-label-md hover:text-slate-900 transition-colors" data-path="home" href="index.html">Home</a>
 <a class="px-space-md py-1.5 text-slate-600 font-label-md text-label-md hover:text-slate-900 transition-colors" data-path="category" href="categories.html">Category</a>
 <a class="px-space-md py-1.5 text-slate-600 font-label-md text-label-md hover:text-slate-900 transition-colors" data-path="live-auctions" href="live-auction.html">Live Auctions</a>
-<a class="px-space-md py-1.5 text-slate-600 font-label-md text-label-md hover:text-slate-900 transition-colors" data-path="sell" href="sell.html">Sell</a>
 <a aria-current="page" class="px-space-md py-1.5 transition-colors bg-primary text-white font-semibold rounded-full shadow-sm font-label-md text-label-md" data-path="profile" href="profile.html">Profile</a>
 </nav>
 <div class="flex items-center gap-space-md shrink-0">
@@ -26,7 +25,8 @@
 <!-- User Info -->
 <div class="flex items-center gap-space-md sm:gap-space-lg">
 <div class="relative flex-shrink-0">
-<div class="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-secondary-container/50 text-primary-container font-headline-lg flex items-center justify-center text-[28px] sm:text-[32px] border border-primary-container/10">
+<img id="headerProfilePicture" class="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border border-primary-container/10" src="" alt="Profile picture">
+<div id="headerProfileInitials" class="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-secondary-container/50 text-primary-container font-headline-lg flex items-center justify-center text-[28px] sm:text-[32px] border border-primary-container/10 hidden">
           LV
         </div>
 <div class="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-primary-container text-on-primary flex items-center justify-center shadow" title="Verified Collector">
@@ -100,13 +100,30 @@
 <div id="favoritesItemsList" class="space-y-space-md"></div>
 </div>
 
-<!-- Account Details Section -->
+<!-- Profile Picture Upload Section -->
 <div data-section="account" class="tab-section hidden lg:col-span-12">
 <div class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-space-lg shadow-sm">
-<h3 class="font-headline-sm text-headline-sm text-on-surface font-bold mb-space-md">Account Details</h3>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-bold mb-space-md">Profile Picture</h3>
+<div class="flex flex-col md:flex-row items-center gap-space-lg">
+<div class="relative flex-shrink-0 w-32 h-32 rounded-full bg-surface-container-low border border-outline-variant overflow-hidden">
+<img id="profilePicturePreview" class="w-full h-full object-cover" src="" alt="Profile picture">
+<div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+<span class="material-symbols-outlined text-white text-headline-lg">camera_alt</span>
+</div>
+<label class="absolute inset-0 cursor-pointer opacity-0" for="profilePictureInput"></label>
+<input id="profilePictureInput" type="file" accept="image/*" class="hidden">
+</div>
+<div class="flex flex-col gap-space-sm">
+<p class="font-body-sm text-body-sm text-on-surface-variant">Upload a profile picture (JPG, PNG, up to 5MB)</p>
+<button id="resetProfilePictureBtn" class="text-xs text-rose-600 hover:text-rose-700 font-medium underline">Reset to default</button>
+</div>
+</div>
+<div class="mt-space-lg">
+<h4 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold mb-space-sm">Account Details</h4>
 <p class="font-body-sm text-body-sm text-on-surface-variant">Member ID: <span class="font-medium text-on-surface" id="accountMemberId">VL-84920</span></p>
 <p class="font-body-sm text-body-sm text-on-surface-variant">Active Paddle: <span class="font-medium text-on-surface" id="accountPaddle">#8492</span></p>
 <p class="font-body-sm text-body-sm text-on-surface-variant">Email: <span class="font-medium text-on-surface" id="accountEmail"></span></p>
+</div>
 </div>
 </div>
 

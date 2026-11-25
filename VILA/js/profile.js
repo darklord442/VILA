@@ -22,6 +22,93 @@ document.addEventListener('DOMContentLoaded', async () => {
   const accountPaddle = document.getElementById('accountPaddle');
   const accountEmail = document.getElementById('accountEmail');
 
+  // ---- profile picture ----
+  const profilePictureInput = document.getElementById('profilePictureInput');
+  const profilePicturePreview = document.getElementById('profilePicturePreview');
+  const headerProfilePicture = document.getElementById('headerProfilePicture');
+  const headerProfileInitials = document.getElementById('headerProfileInitials');
+  const resetProfilePictureBtn = document.getElementById('resetProfilePictureBtn');
+  const navProfileImg = document.querySelector('header img[alt="Profile"]');
+
+  // Load saved profile picture from localStorage
+  let profilePictureUrl = localStorage.getItem(`profilePicture_${userId}`);
+
+  function applyProfilePicture(url) {
+    profilePictureUrl = url;
+    if (url) {
+      localStorage.setItem(`profilePicture_${userId}`, url);
+      // Update user object in localStorage
+      try {
+        const userRaw = localStorage.getItem('user');
+        if (userRaw) {
+          const u = JSON.parse(userRaw);
+          u.profilePicture = url;
+          localStorage.setItem('user', JSON.stringify(u));
+        }
+      } catch (e) { console.error('Save profile picture to user error:', e); }
+
+      // Update all avatar displays
+      if (profilePicturePreview) profilePicturePreview.src = url;
+      if (headerProfilePicture) {
+        headerProfilePicture.src = url;
+        headerProfilePicture.classList.remove('hidden');
+      }
+      if (headerProfileInitials) headerProfileInitials.classList.add('hidden');
+      if (navProfileImg) navProfileImg.src = url;
+    } else {
+      localStorage.removeItem(`profilePicture_${userId}`);
+      try {
+        const userRaw = localStorage.getItem('user');
+        if (userRaw) {
+          const u = JSON.parse(userRaw);
+          delete u.profilePicture;
+          localStorage.setItem('user', JSON.stringify(u));
+        }
+      } catch (e) { console.error('Remove profile picture from user error:', e); }
+
+      if (profilePicturePreview) profilePicturePreview.src = '';
+      if (headerProfilePicture) {
+        headerProfilePicture.classList.add('hidden');
+      }
+      if (headerProfileInitials) headerProfileInitials.classList.remove('hidden');
+      if (navProfileImg) navProfileImg.src = 'https://lh3.googleusercontent.com/aida/ALJJyrAhoX5W4abndDkmZ2XCkkHcgcUiINghN7_PM_tErSPaow9kEOnspGvKLfB7pfczMcqUqxQpvYXd2GAmgQOyxSVmj6Z5IwQL7k7deXJJmFwO4lJptaz9jQQ6d5LzT8ixlNLbMCIDXhIcKcJ06yXxFwG-tL31pVObhSKWuBFhrZoBs1GggyqagQni0wcppSSDP1BNYcCQw6e1KKC5oNQDjH8kNHl_kXGiNIs5IFXhK7aS';
+    }
+  }
+
+  // Initialize profile picture on load
+  if (profilePictureUrl) {
+    applyProfilePicture(profilePictureUrl);
+  }
+
+  // Handle file selection
+  if (profilePictureInput) {
+    profilePictureInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (!file.type.startsWith('image/')) {
+        alert('Please select a valid image file.');
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File too large. Please choose an image under 5MB.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        applyProfilePicture(event.target.result);
+        profilePictureInput.value = ''; // reset input
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Reset to default
+  if (resetProfilePictureBtn) {
+    resetProfilePictureBtn.addEventListener('click', () => {
+      applyProfilePicture(null);
+    });
+  }
+
   // ---- helpers ----
   function findCatalogLot(lotId) {
     for (const dept of (window.VELA_CATALOG || [])) {

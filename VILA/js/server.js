@@ -33,10 +33,6 @@ app.get('/categories.html', (req, res) => {
   res.sendFile(path.join(__dirname, '../pages/categories.html'));
 });
 
-app.get('/sell.html', (req, res) => {
-  res.sendFile(path.join(__dirname, '../pages/sell.html'));
-});
-
 app.get('/profile.html', (req, res) => {
   res.sendFile(path.join(__dirname, '../pages/profile.html'));
 });

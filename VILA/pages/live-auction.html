@@ -29,7 +29,6 @@
 <a class="px-space-md py-1.5 text-slate-600 font-label-md text-label-md hover:text-slate-900 transition-colors" data-path="home" href="index.html">Home</a>
 <a class="px-space-md py-1.5 text-slate-600 font-label-md text-label-md hover:text-slate-900 transition-colors" data-path="category" href="categories.html">Category</a>
 <a aria-current="page" class="px-space-md py-1.5 transition-colors bg-primary text-white font-semibold rounded-full shadow-sm font-label-md text-label-md" data-path="live-auctions" href="live-auction.html">Live Auctions</a>
-<a class="px-space-md py-1.5 text-slate-600 font-label-md text-label-md hover:text-slate-900 transition-colors" data-path="sell" href="sell.html">Sell</a>
 <a class="px-space-md py-1.5 text-slate-600 font-label-md text-label-md hover:text-slate-900 transition-colors" data-path="profile" href="profile.html">Profile</a>
 </nav>
 <div class="flex items-center gap-space-md shrink-0">
@@ -321,6 +320,22 @@
 </div>
 <script src="../js/catalog.js" defer></script>
 <script src="../js/live-auction.js" defer></script>
+<script>
+    // Restore saved profile picture in nav header
+    (function() {
+      const storedUser = localStorage.getItem('user');
+      if (!storedUser) return;
+      try {
+        const user = JSON.parse(storedUser);
+        const userId = user.id;
+        const savedPic = localStorage.getItem('profilePicture_' + userId);
+        const navImg = document.querySelector('header img[alt="Profile"]');
+        if (savedPic && navImg) {
+          navImg.src = savedPic;
+        }
+      } catch (e) {}
+    })();
+  </script>
 </div>
 </main>
 <footer class="w-full bg-white border-t border-slate-200 mt-space-xl">
