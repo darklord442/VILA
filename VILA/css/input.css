@@ -1,8 +1,34 @@
 @import "tailwindcss";
 
 @theme {
-  /* --- Live Auction / Categories theme (blue #2563eb) --- */
+  /* --- Colors (Live Auction / Categories / Profile themes merged) --- */
   --color-primary: #2563eb;
+  --color-primary-container: #1d4ed8;
+  --color-primary-fixed: #dce1ff;
+  --color-primary-fixed-dim: #b7c4ff;
+  --color-on-primary: #ffffff;
+  --color-on-primary-container: #ffffff;
+  --color-on-primary-fixed: #001551;
+  --color-on-primary-fixed-variant: #1d4ed8;
+
+  --color-secondary: #d97706;
+  --color-secondary-container: #e2e8f0;
+  --color-secondary-fixed: #dae2fd;
+  --color-secondary-fixed-dim: #bec6e0;
+  --color-on-secondary: #ffffff;
+  --color-on-secondary-container: #475569;
+  --color-on-secondary-fixed: #131b2e;
+  --color-on-secondary-fixed-variant: #3f465c;
+
+  --color-tertiary: #0284c7;
+  --color-tertiary-container: #0369a1;
+  --color-tertiary-fixed: #d8e2ff;
+  --color-tertiary-fixed-dim: #adc6ff;
+  --color-on-tertiary: #ffffff;
+  --color-on-tertiary-container: #c4d5ff;
+  --color-on-tertiary-fixed: #001a42;
+  --color-on-tertiary-fixed-variant: #004395;
+
   --color-background: #f8fafc;
   --color-surface: #ffffff;
   --color-surface-container: #f1f5f9;
@@ -11,46 +37,21 @@
   --color-surface-container-high: #ffffff;
   --color-surface-container-highest: #e2e8f0;
   --color-surface-variant: #f1f5f9;
-  --color-secondary: #d97706;
-  --color-secondary-container: #e2e8f0;
-  --color-secondary-fixed: #dae2fd;
-  --color-secondary-fixed-dim: #bec6e0;
-  --color-tertiary: #0284c7;
-  --color-tertiary-container: #0369a1;
-  --color-tertiary-fixed: #d8e2ff;
-  --color-tertiary-fixed-dim: #adc6ff;
-  --color-on-primary: #ffffff;
-  --color-on-primary-container: #ffffff;
-  --color-on-secondary: #ffffff;
-  --color-on-secondary-container: #475569;
-  --color-on-secondary-fixed: #131b2e;
-  --color-on-secondary-fixed-variant: #3f465c;
-  --color-on-tertiary: #ffffff;
-  --color-on-tertiary-container: #c4d5ff;
-  --color-on-tertiary-fixed: #001a42;
-  --color-on-tertiary-fixed-variant: #004395;
-  --color-on-surface: #0f172a;
-  --color-on-surface-variant: #64748b;
-  --color-on-error: #ffffff;
-  --color-on-error-container: #991b1b;
-  --color-on-background: #0f172a;
-  --color-on-primary-fixed: #001551;
-  --color-on-primary-fixed-variant: #1d4ed8;
-  --color-error: #dc2626;
-  --color-error-container: #fee2e2;
-  --color-inverse-on-surface: #eff1f3;
-  --color-inverse-surface: #1e293b;
-  --color-inverse-primary: #b7c4ff;
-  --color-outline: #cbd5e1;
-  --color-outline-variant: #e2e8f0;
   --color-surface-dim: #e2e8f0;
   --color-surface-bright: #ffffff;
   --color-surface-tint: #2563eb;
 
-  /* --color-primary-container: #1d4ed8; */
-  --color-primary-container: #1d4ed8;
-  --color-primary-fixed: #dce1ff;
-  --color-primary-fixed-dim: #b7c4ff;
+  --color-error: #dc2626;
+  --color-error-container: #fee2e2;
+  --color-on-error: #ffffff;
+  --color-on-error-container: #991b1b;
+
+  --color-inverse-on-surface: #eff1f3;
+  --color-inverse-surface: #1e293b;
+  --color-inverse-primary: #b7c4ff;
+
+  --color-outline: #cbd5e1;
+  --color-outline-variant: #e2e8f0;
 
   /* --- Profile theme additions (blue #0037b0) --- */
   --color-primary-p: #0037b0;
@@ -60,24 +61,103 @@
   --color-tertiary-p: #004191;
   --color-error-p: #ba1a1a;
 
-  /* Radius */
+  /* --- Border Radius --- */
   --radius-default: 0.25rem;
   --radius-lg: 0.5rem;
   --radius-xl: 0.75rem;
   --radius-full: 9999px;
 
-  /* Spacing */
-  --space-gutter: 1.5rem;
-  --space-margin: 2rem;
-  --space-margin-sm: 1rem;
-  --space-gutter-lg: 2rem;
-  --space-space-lg: 1.5rem;
-  --space-space-xs: 0.25rem;
-  --space-margin-lg: 4rem;
-  --space-space-sm: 0.5rem;
-  --space-space-md: 1rem;
-  --space-gutter-sm: 1rem;
-  --space-space-xl: 2.5rem;
+  /* --- Spacing --- */
+  --spacing-gutter: 1.5rem;
+  --spacing-margin: 2rem;
+  --spacing-margin-sm: 1rem;
+  --spacing-gutter-lg: 2rem;
+  --spacing-space-lg: 1.5rem;
+  --spacing-space-xs: 0.25rem;
+  --spacing-margin-lg: 4rem;
+  --spacing-space-sm: 0.5rem;
+  --spacing-space-md: 1rem;
+  --spacing-gutter-sm: 1rem;
+  --spacing-space-xl: 2.5rem;
+
+  /* --- Font Families --- */
+  --font-family-label-md: "Plus Jakarta Sans", sans-serif;
+  --font-family-display-lg: "Plus Jakarta Sans", sans-serif;
+  --font-family-headline-md: "Plus Jakarta Sans", sans-serif;
+  --font-family-title-md: "Plus Jakarta Sans", sans-serif;
+  --font-family-headline-xl: "Plus Jakarta Sans", sans-serif;
+  --font-family-body-lg: "Plus Jakarta Sans", sans-serif;
+  --font-family-headline-lg: "Plus Jakarta Sans", sans-serif;
+  --font-family-body-md: "Plus Jakarta Sans", sans-serif;
+  --font-family-counter-xl: "Plus Jakarta Sans", sans-serif;
+  --font-family-body-sm: "Plus Jakarta Sans", sans-serif;
+  --font-family-label-sm: "Plus Jakarta Sans", sans-serif;
+  --font-family-headline-xl-mobile: "Plus Jakarta Sans", sans-serif;
+  --font-family-display-lg-mobile: "Plus Jakarta Sans", sans-serif;
+  --font-family-headline-sm: "Plus Jakarta Sans", sans-serif;
+  --font-family-numeral-hero: "Plus Jakarta Sans", sans-serif;
+
+  /* --- Font Sizes --- */
+  --text-label-md: 14px;
+  --text-label-md--line-height: 20px;
+  --text-label-md--letter-spacing: 0.01em;
+  --text-label-md--font-weight: 600;
+  --text-display-lg: 56px;
+  --text-display-lg--line-height: 64px;
+  --text-display-lg--letter-spacing: -0.03em;
+  --text-display-lg--font-weight: 800;
+  --text-headline-md: 24px;
+  --text-headline-md--line-height: 32px;
+  --text-headline-md--letter-spacing: -0.015em;
+  --text-headline-md--font-weight: 600;
+  --text-title-md: 16px;
+  --text-title-md--line-height: 24px;
+  --text-title-md--letter-spacing: -0.005em;
+  --text-title-md--font-weight: 600;
+  --text-headline-xl: 40px;
+  --text-headline-xl--line-height: 48px;
+  --text-headline-xl--letter-spacing: -0.025em;
+  --text-headline-xl--font-weight: 700;
+  --text-body-lg: 18px;
+  --text-body-lg--line-height: 28px;
+  --text-body-lg--letter-spacing: 0em;
+  --text-body-lg--font-weight: 400;
+  --text-headline-lg: 32px;
+  --text-headline-lg--line-height: 40px;
+  --text-headline-lg--letter-spacing: -0.02em;
+  --text-headline-lg--font-weight: 700;
+  --text-body-md: 15px;
+  --text-body-md--line-height: 24px;
+  --text-body-md--letter-spacing: 0em;
+  --text-body-md--font-weight: 400;
+  --text-counter-xl: 36px;
+  --text-counter-xl--line-height: 40px;
+  --text-counter-xl--letter-spacing: -0.02em;
+  --text-counter-xl--font-weight: 800;
+  --text-body-sm: 13px;
+  --text-body-sm--line-height: 20px;
+  --text-body-sm--letter-spacing: 0.005em;
+  --text-body-sm--font-weight: 400;
+  --text-label-sm: 12px;
+  --text-label-sm--line-height: 16px;
+  --text-label-sm--letter-spacing: 0.02em;
+  --text-label-sm--font-weight: 600;
+  --text-headline-xl-mobile: 28px;
+  --text-headline-xl-mobile--line-height: 36px;
+  --text-headline-xl-mobile--letter-spacing: -0.015em;
+  --text-headline-xl-mobile--font-weight: 700;
+  --text-display-lg-mobile: 36px;
+  --text-display-lg-mobile--line-height: 44px;
+  --text-display-lg-mobile--letter-spacing: -0.02em;
+  --text-display-lg-mobile--font-weight: 800;
+  --text-headline-sm: 20px;
+  --text-headline-sm--line-height: 28px;
+  --text-headline-sm--letter-spacing: -0.01em;
+  --text-headline-sm--font-weight: 600;
+  --text-numeral-hero: 38px;
+  --text-numeral-hero--line-height: 44px;
+  --text-numeral-hero--letter-spacing: -0.03em;
+  --text-numeral-hero--font-weight: 800;
 }
 
 @layer base {
