@@ -123,11 +123,11 @@
 <p class="font-body-sm text-body-sm text-on-surface-variant">Member ID: <span class="font-medium text-on-surface" id="accountMemberId">VL-84920</span></p>
 <p class="font-body-sm text-body-sm text-on-surface-variant">Active Paddle: <span class="font-medium text-on-surface" id="accountPaddle">#8492</span></p>
 <p class="font-body-sm text-body-sm text-on-surface-variant">Email: <span class="font-medium text-on-surface" id="accountEmail"></span></p>
-<div class="flex flex-col gap-space-sm w-full sm:w-96">
+<div class="flex flex-col gap-space-sm w-full max-w-sm mt-space-md">
 <label for="accountNameInput" class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">Display Name</label>
-<div class="relative">
-<input type="text" id="accountNameInput" class="w-full h-10 pl-space-md pr-8 rounded-lg bg-surface-container-low border border-slate-200 text-on-surface font-body-sm text-body-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" placeholder="Your name">
-<button id="saveNameBtn" class="absolute right-2 top-2 h-8 px-3 rounded-lg bg-primary text-on-primary text-xs font-bold hover:bg-blue-600 transition-colors">Save</button>
+<div class="flex items-center gap-2">
+<input type="text" id="accountNameInput" class="flex-1 min-w-0 h-10 px-space-md rounded-lg bg-surface-container-low border border-slate-200 text-on-surface font-body-sm text-body-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" placeholder="Your name">
+<button id="saveNameBtn" class="h-10 px-4 rounded-lg bg-primary text-on-primary text-xs font-bold hover:bg-blue-600 transition-colors shrink-0">Save</button>
 </div>
 <p id="nameSaveStatus" class="text-[10px] text-emerald-600 font-medium hidden mt-0.5">Saved!</p>
 </div>
