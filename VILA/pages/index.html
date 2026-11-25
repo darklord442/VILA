@@ -22,7 +22,7 @@
 <span>Enter Live Saleroom</span>
 <span class="material-symbols-outlined text-[20px]">gavel</span>
 </a>
-<a class="h-14 px-space-xl rounded-lg bg-surface-container-lowest text-on-surface font-label-md text-label-md flex items-center justify-center gap-space-xs shadow-sm hover:shadow transition-all group" href="#how-it-works">
+<a class="h-14 px-space-xl rounded-lg bg-surface-container-lowest text-on-surface font-label-md text-label-md flex items-center justify-center gap-space-xs shadow-sm hover:shadow transition-all group" href="live-auction.html?lot=104">
 <span class="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors">
 <span class="material-symbols-outlined text-[18px]">pan_tool</span>
 </span>
@@ -238,7 +238,7 @@
 </div>
 <script src="../js/catalog.js"></script>
 <script>
-  // Pick a random lot from catalog when "Enter Live Saleroom" is clicked
+  // Pick a random lot from catalog when "Enter Live Saleroom" or "How It Works / Raise Hand" is clicked
   document.querySelectorAll('a[href^="live-auction.html"]').forEach(link => {
     link.addEventListener('click', (e) => {
       if (window.VELA_CATALOG) {
