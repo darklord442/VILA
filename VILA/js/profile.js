@@ -13,6 +13,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const watchlistList = document.getElementById('watchlistItemsList');
   const purchasedCountBadge = document.getElementById('purchasedCountBadge');
   const watchlistCountBadge = document.getElementById('watchlistCountBadge');
+  const purchasedSectionCount = document.getElementById('purchasedSectionCount');
+  const watchlistSectionCount = document.getElementById('watchlistSectionCount');
   const tabButtons = document.querySelectorAll('[data-tab]');
   const tabSections = document.querySelectorAll('[data-section]');
 
@@ -76,10 +78,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       const res = await fetch(`/api/purchased/${userId}`);
       const data = await res.json();
       const items = data.purchased || [];
-      if (purchasedCountBadge) purchasedCountBadge.textContent = `${items.length} Items Total`;
+      const countText = `${items.length} Items Total`;
+      if (purchasedCountBadge) purchasedCountBadge.textContent = countText;
+      if (purchasedSectionCount) purchasedSectionCount.textContent = countText;
       renderPurchased(items);
     } catch (err) {
       console.error('Load purchased error:', err);
+      if (purchasedCountBadge) purchasedCountBadge.textContent = '0 Items Total';
+      if (purchasedSectionCount) purchasedSectionCount.textContent = '0 Items Total';
       if (purchasedList) purchasedList.innerHTML = `<p class="text-on-surface-variant text-center py-space-lg">Failed to load purchased items.</p>`;
     }
   }
@@ -140,10 +146,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       const res = await fetch(`/api/watchlist/${userId}`);
       const data = await res.json();
       const items = data.watchlist || [];
-      if (watchlistCountBadge) watchlistCountBadge.textContent = `${items.length} Items`;
+      const countText = `${items.length} Items`;
+      if (watchlistCountBadge) watchlistCountBadge.textContent = countText;
+      if (watchlistSectionCount) watchlistSectionCount.textContent = countText;
       renderWatchlist(items);
     } catch (err) {
       console.error('Load watchlist error:', err);
+      if (watchlistCountBadge) watchlistCountBadge.textContent = '0 Items';
+      if (watchlistSectionCount) watchlistSectionCount.textContent = '0 Items';
       if (watchlistList) watchlistList.innerHTML = `<p class="text-on-surface-variant text-center py-space-lg">Failed to load watchlist.</p>`;
     }
   }
