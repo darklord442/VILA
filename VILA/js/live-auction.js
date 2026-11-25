@@ -1,7 +1,32 @@
 // Live Auction page - Bidding console, chat, reactions, realtime WebSocket sync
 let activeBidTarget = 145000;
 let currentLotId = null; // null = default (non-catalog) lot
-const myDisplayName = 'Paddle #8492 (You)';
+
+// Derive paddle + display name from logged-in user, fallback to a unique session paddle
+const storedUser = localStorage.getItem('user');
+const parsedUser = storedUser ? (() => { try { return JSON.parse(storedUser); } catch (e) { return null; } })() : null;
+const myPaddle = parsedUser ? `#${String(parsedUser.id || Math.floor(Math.random() * 9000) + 1000).padStart(4, '0')}` : `#${Math.floor(Math.random() * 9000) + 1000}`;
+const myDisplayName = `Paddle ${myPaddle} (You)`;
+
+// Push the dynamic paddle into the HTML paddle displays
+function updatePaddleDisplays() {
+  document.querySelectorAll('#paddle-id-display, #console-paddle').forEach(el => {
+    el.textContent = myPaddle;
+  });
+}
+updatePaddleDisplays();
+
+// WebSocket status UI
+const wsStatusEl = document.getElementById('ws-status');
+function setWSStatus(connected) {
+  wsConnected = connected;
+  if (wsStatusEl) {
+    wsStatusEl.textContent = connected ? 'Connected' : 'Disconnected';
+    wsStatusEl.className = connected
+      ? 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse'
+      : 'w-2 h-2 rounded-full bg-rose-500';
+  }
+}
 
 // ---------- Helpers ----------
 
@@ -170,8 +195,9 @@ function executeBid() {
       lotId: currentLotId,
       amount: activeBidTarget,
       bidder: myDisplayName,
-      paddle: '#8492',
+      paddle: myPaddle,
     }));
+    console.log('WS bid sent:', { lotId: currentLotId, amount: activeBidTarget, bidder: myDisplayName, paddle: myPaddle });
     return; // UI updates when the broadcast 'bid' event arrives
   }
   // Offline fallback: local-only update
@@ -188,6 +214,7 @@ function handleSaleroomChat(e) {
   if (!text) return;
   if (wsConnected && ws && ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify({ type: 'chat', lotId: currentLotId, user: myDisplayName, text }));
+    console.log('WS chat sent:', { lotId: currentLotId, user: myDisplayName, text });
     input.value = '';
     return; // rendered when broadcast arrives
   }
@@ -198,6 +225,7 @@ function handleSaleroomChat(e) {
 function sendQuickReaction(emoji) {
   if (wsConnected && ws && ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify({ type: 'reaction', emoji, user: myDisplayName, lotId: currentLotId }));
+    console.log('WS reaction sent:', { emoji, user: myDisplayName, lotId: currentLotId });
     return;
   }
   appendReactionEntry(emoji, myDisplayName);
@@ -214,20 +242,26 @@ function connectWS() {
     ws = new WebSocket(`${proto}://${location.host}`);
   } catch (err) {
     console.warn('WebSocket connect failed:', err);
+    setWSStatus(false);
     return;
   }
   ws.onopen = () => {
-    wsConnected = true;
+    setWSStatus(true);
+    console.log('WS connected');
     ws.send(JSON.stringify({ type: 'state_request', lotId: currentLotId }));
   };
   ws.onmessage = (e) => {
-    try { handleWSMessage(JSON.parse(e.data)); } catch (err) { console.warn('Bad WS payload:', err); }
+    try {
+      const msg = JSON.parse(e.data);
+      console.log('WS message received:', msg.type, msg);
+      handleWSMessage(msg);
+    } catch (err) { console.warn('Bad WS payload:', err); }
   };
   ws.onclose = () => {
-    wsConnected = false;
+    setWSStatus(false);
     setTimeout(connectWS, 3000); // auto-reconnect
   };
-  ws.onerror = () => { wsConnected = false; };
+  ws.onerror = () => { setWSStatus(false); };
 }
 
 function sameLot(a, b) {
