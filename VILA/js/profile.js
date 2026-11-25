@@ -281,7 +281,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </button>
                 <a href="live-auction.html?lot=${escapeHtml(item.lotId)}" class="h-9 px-3.5 rounded-lg bg-primary-container hover:bg-primary text-on-primary font-label-sm text-label-sm transition-colors flex items-center gap-1">
                   <span class="material-symbols-outlined text-[16px]">gavel</span> Bid
-                </button>
+                </a>
               </div>
             </div>
           </div>
@@ -309,11 +309,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       btn.parentNode.replaceChild(newBtn, btn);
       newBtn.addEventListener('click', async () => {
         const lotId = newBtn.getAttribute(attr);
+        const endpoint = type === 'favorites' ? 'watchlist' : type;
         try {
-          const res = await fetch(`/api/${type}/${userId}/${lotId}`, { method: 'DELETE' });
+          const res = await fetch(`/api/${endpoint}/${userId}/${lotId}`, { method: 'DELETE' });
           if (res.ok) {
             if (type === 'purchased') loadPurchased();
-            else loadWatchlist();
+            else loadFavorites();
           } else {
             const data = await res.json().catch(() => ({}));
             alert(data.message || 'Failed to remove item');
