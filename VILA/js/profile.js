@@ -38,6 +38,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   const nameSaveStatus = document.getElementById('nameSaveStatus');
   const accountNameDisplay = document.querySelector('h1.font-headline-md');
 
+  function getInitials(name) {
+    const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return 'U';
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+
+  function applyDisplayName(name) {
+    if (!name) return;
+    if (accountNameDisplay) accountNameDisplay.textContent = name;
+    if (accountNameInput) accountNameInput.value = name;
+    if (headerProfileInitials) headerProfileInitials.textContent = getInitials(name);
+  }
+
   // Load saved profile picture from localStorage
   let profilePictureUrl = localStorage.getItem(`profilePicture_${userId}`);
 
@@ -338,41 +352,94 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Save display name
-  if (saveNameBtn && accountNameInput) {
-    const savedName = localStorage.getItem('accountName_' + userId);
-    if (savedName) {
-      accountNameInput.value = savedName;
-      if (accountNameDisplay) accountNameDisplay.textContent = savedName;
-    }
+  // Save display name to PostgreSQL + localStorage
+  function showNameStatus(text, isError = false) {
+    if (!nameSaveStatus) return;
+    nameSaveStatus.textContent = text;
+    nameSaveStatus.className = isError
+      ? 'text-[10px] text-rose-600 font-medium mt-0.5'
+      : 'text-[10px] text-emerald-600 font-medium mt-0.5';
+    nameSaveStatus.classList.remove('hidden');
+    setTimeout(() => { nameSaveStatus.classList.add('hidden'); }, 2000);
+  }
 
-    saveNameBtn.addEventListener('click', () => {
-      const newName = accountNameInput.value.trim();
-      if (!newName) {
-        nameSaveStatus.textContent = 'Name cannot be empty';
-        nameSaveStatus.className = 'text-[10px] text-rose-600 font-medium mt-0.5';
-        nameSaveStatus.classList.remove('hidden');
-        setTimeout(() => { nameSaveStatus.classList.add('hidden'); }, 2000);
-        return;
-      }
-      localStorage.setItem('accountName_' + userId, newName);
-      try {
-        const userRaw = localStorage.getItem('user');
-        if (userRaw) {
-          const u = JSON.parse(userRaw);
-          u.displayName = newName;
+  async function loadUserProfile() {
+    const fallbackName = user.full_name || user.displayName || localStorage.getItem('accountName_' + userId);
+    if (fallbackName) applyDisplayName(fallbackName);
+
+    try {
+      const res = await fetch(`/api/users/${userId}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.status === 'success' && data.user) {
+        const dbName = data.user.full_name;
+        if (dbName) {
+          applyDisplayName(dbName);
+          localStorage.setItem('accountName_' + userId, dbName);
+        }
+        if (accountEmail && data.user.email) {
+          accountEmail.textContent = data.user.email;
+        }
+        const storedRaw = localStorage.getItem('user');
+        if (storedRaw) {
+          const u = JSON.parse(storedRaw);
+          if (dbName) {
+            u.full_name = dbName;
+            u.displayName = dbName;
+          }
+          if (data.user.email) u.email = data.user.email;
           localStorage.setItem('user', JSON.stringify(u));
         }
-      } catch (e) { console.error('Save display name error:', e); }
-      if (accountNameDisplay) accountNameDisplay.textContent = newName;
-      nameSaveStatus.textContent = 'Saved!';
-      nameSaveStatus.className = 'text-[10px] text-emerald-600 font-medium mt-0.5';
-      nameSaveStatus.classList.remove('hidden');
-      setTimeout(() => { nameSaveStatus.classList.add('hidden'); }, 2000);
+      }
+    } catch (e) {
+      console.error('Load user profile error:', e);
+    }
+  }
+
+  if (saveNameBtn && accountNameInput) {
+    saveNameBtn.addEventListener('click', async () => {
+      const newName = accountNameInput.value.trim();
+      if (!newName) {
+        showNameStatus('Name cannot be empty', true);
+        return;
+      }
+
+      saveNameBtn.disabled = true;
+      try {
+        const res = await fetch(`/api/users/${userId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fullName: newName }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          showNameStatus(data.message || 'Failed to save name', true);
+          return;
+        }
+
+        const savedName = (data.user && data.user.full_name) || newName;
+        localStorage.setItem('accountName_' + userId, savedName);
+        try {
+          const storedRaw = localStorage.getItem('user');
+          if (storedRaw) {
+            const u = JSON.parse(storedRaw);
+            u.full_name = savedName;
+            u.displayName = savedName;
+            localStorage.setItem('user', JSON.stringify(u));
+          }
+        } catch (e) { console.error('Save display name error:', e); }
+        applyDisplayName(savedName);
+        showNameStatus('Saved!');
+      } catch (err) {
+        showNameStatus('Could not reach the server', true);
+      } finally {
+        saveNameBtn.disabled = false;
+      }
     });
   }
 
   // ---- initial load ----
+  loadUserProfile();
   loadPurchased();
   loadFavorites();
   showTab('purchased');
