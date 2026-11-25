@@ -336,10 +336,10 @@ setInterval(() => {
     const formattedTime = '00:' + (secondsLeft < 10 ? '0' : '') + secondsLeft;
     if (timerElem) timerElem.innerText = formattedTime;
     if (secondsLeft <= 15 && secondsLeft > 0 && timerBox) {
-      timerBox.classList.add('bg-amber-100', 'ring-2', 'ring-amber-500');
+      timerBox.classList.add('bg-blue-100', 'ring-2', 'ring-primary-container');
     }
     if (secondsLeft === 0 && timerBox) {
-      timerBox.classList.remove('bg-amber-100', 'ring-2', 'ring-amber-500');
+      timerBox.classList.remove('bg-blue-100', 'ring-2', 'ring-primary-container');
     }
   }
 }, 1000);
