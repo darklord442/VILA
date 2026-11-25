@@ -189,6 +189,14 @@ function appendSystemNote(text) {
 // ---------- User actions (WS with local fallback) ----------
 
 function executeBid() {
+  if (auctionEnded || (auctionState && auctionState.auctionStatus === 'closed')) {
+    appendSystemNote('This auction has closed. Bidding is no longer accepted.');
+    return;
+  }
+  if (!currentLotId) {
+    appendSystemNote('No active lot selected.');
+    return;
+  }
   if (wsConnected && ws && ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify({
       type: 'bid',
@@ -198,7 +206,7 @@ function executeBid() {
       paddle: myPaddle,
     }));
     console.log('WS bid sent:', { lotId: currentLotId, amount: activeBidTarget, bidder: myDisplayName, paddle: myPaddle });
-    return; // UI updates when the broadcast 'bid' event arrives
+    return; // UI updates when the broadcast 'bid' / 'auction_state' event arrives
   }
   // Offline fallback: local-only update
   const formatted = new Intl.NumberFormat('en-US').format(activeBidTarget);
@@ -278,6 +286,43 @@ function handleWSMessage(msg) {
         setText('display-current-bid', fmtMoney(msg.amount));
         appendBidFeedEntry(msg.amount, msg.bidder || (msg.paddle ? `Paddle ${msg.paddle}` : 'Anonymous'));
         setupBidConsole(msg.amount);
+      }
+      break;
+    case 'auction_state':
+      if (sameLot(msg.lotId, currentLotId)) {
+        auctionState = {
+          lotId: msg.lotId,
+          auctionStatus: msg.auctionStatus,
+          timeLeft: msg.timeLeft,
+          currentBid: msg.currentBid,
+          currentBidder: msg.currentBidder,
+          currentPaddle: msg.currentPaddle,
+        };
+        setText('display-current-bid', fmtMoney(msg.currentBid));
+        renderAuctionUI();
+      }
+      break;
+    case 'auction_closed':
+      if (sameLot(msg.lotId, currentLotId)) {
+        auctionEnded = true;
+        auctionState = {
+          lotId: msg.lotId,
+          auctionStatus: 'closed',
+          timeLeft: 0,
+          currentBid: msg.winningBid,
+          currentBidder: msg.winner,
+          currentPaddle: msg.winnerPaddle,
+        };
+        renderAuctionUI();
+        setText('display-current-bid', fmtMoney(msg.winningBid || 0));
+        appendSystemNote(`🔨 AUCTION CLOSED — Won by ${msg.winner || 'no bids'} at ${fmtMoney(msg.winningBid || 0)}`);
+        if (bidBtn) {
+          bidBtn.disabled = true;
+          bidBtn.classList.add('opacity-50', 'cursor-not-allowed');
+          bidBtn.classList.remove('hover:bg-blue-700');
+          const btnText = document.getElementById('bid-btn-text');
+          if (btnText) btnText.textContent = 'Auction Closed';
+        }
       }
       break;
     case 'chat':
@@ -360,20 +405,86 @@ function loadLotFromQuery() {
 loadLotFromQuery();
 connectWS();
 
-// Live countdown emulation
-let secondsLeft = 39;
+// ---------- Auction state (server-synced timer + winner) ----------
+
+let auctionState = null;
+let auctionEnded = false;
+
 const timerElem = document.getElementById('timer-display');
 const timerBox = document.getElementById('hammer-timer');
-setInterval(() => {
-  if (secondsLeft > 0) {
-    secondsLeft--;
-    const formattedTime = '00:' + (secondsLeft < 10 ? '0' : '') + secondsLeft;
-    if (timerElem) timerElem.innerText = formattedTime;
-    if (secondsLeft <= 15 && secondsLeft > 0 && timerBox) {
-      timerBox.classList.add('bg-blue-100', 'ring-2', 'ring-primary-container');
+const bidBtn = document.getElementById('bid-submit-btn');
+
+function formatTimeLeft(ms) {
+  const totalSecs = Math.max(0, Math.floor(ms / 1000));
+  const m = Math.floor(totalSecs / 60);
+  const s = totalSecs % 60;
+  return `${m}:${s < 10 ? '0' : ''}${s}`;
+}
+
+function renderAuctionUI() {
+  if (!timerElem || !timerBox) return;
+
+  if (auctionEnded || (auctionState && auctionState.auctionStatus === 'closed')) {
+    timerBox.classList.remove('bg-blue-100', 'ring-2', 'ring-primary-container');
+    timerBox.classList.add('bg-rose-50', 'border-rose-200');
+    timerElem.textContent = 'CLOSED';
+    timerElem.className = 'font-headline-sm text-headline-sm font-bold text-rose-600 tabular-nums';
+    if (bidBtn) {
+      bidBtn.disabled = true;
+      bidBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      bidBtn.classList.remove('hover:bg-blue-700');
+      const btnText = document.getElementById('bid-btn-text');
+      if (btnText) btnText.textContent = 'Auction Closed';
     }
-    if (secondsLeft === 0 && timerBox) {
-      timerBox.classList.remove('bg-blue-100', 'ring-2', 'ring-primary-container');
+    return;
+  }
+
+  const timeLeft = auctionState ? auctionState.timeLeft : 0;
+  timerElem.textContent = formatTimeLeft(timeLeft);
+
+  // Visual warning in final 10 seconds
+  if (timeLeft <= 10000 && timeLeft > 0) {
+    timerBox.classList.add('bg-rose-50', 'border-rose-200', 'animate-pulse');
+    timerBox.classList.remove('bg-blue-100', 'ring-2', 'ring-primary-container');
+    timerElem.className = 'font-headline-sm text-headline-sm font-bold text-rose-600 tabular-nums';
+  } else if (timeLeft > 0) {
+    timerBox.classList.add('bg-blue-100', 'ring-2', 'ring-primary-container');
+    timerBox.classList.remove('bg-rose-50', 'border-rose-200', 'animate-pulse');
+    timerElem.className = 'font-headline-sm text-headline-sm font-bold text-primary-container tabular-nums';
+  }
+
+  // Show current leader under the bid display
+  if (auctionState && auctionState.currentBidder) {
+    const leaderBox = document.getElementById('current-leader');
+    if (leaderBox) {
+      leaderBox.innerHTML = `Led by <strong class="font-bold">${escapeHtml(auctionState.currentBidder)}</strong> at ${fmtMoney(auctionState.currentBid || 0)}`;
     }
   }
-}, 1000);
+}
+
+async function fetchAuctionState() {
+  if (!currentLotId) return;
+  try {
+    const res = await fetch(`/api/auction/${currentLotId}/state`);
+    const data = await res.json();
+    if (data.status === 'success') {
+      auctionState = {
+        lotId: data.lotId,
+        auctionStatus: data.auctionStatus,
+        timeLeft: data.timeLeft,
+        currentBid: data.currentBid,
+        currentBidder: data.currentBidder,
+        currentPaddle: data.currentPaddle,
+      };
+      renderAuctionUI();
+    }
+  } catch (err) {
+    console.warn('Auction state fetch failed:', err);
+  }
+}
+
+// Poll auction state every second for the countdown
+setInterval(fetchAuctionState, 1000);
+
+// Initial fetch once WS is connected
+fetchAuctionState();
