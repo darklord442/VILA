@@ -10,11 +10,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // ---- DOM elements ----
   const purchasedList = document.getElementById('purchasedItemsList');
-  const watchlistList = document.getElementById('watchlistItemsList');
+  const favoritesList = document.getElementById('favoritesItemsList');
   const purchasedCountBadge = document.getElementById('purchasedCountBadge');
-  const watchlistCountBadge = document.getElementById('watchlistCountBadge');
+  const favoritesCountBadge = document.getElementById('favoritesCountBadge');
   const purchasedSectionCount = document.getElementById('purchasedSectionCount');
-  const watchlistSectionCount = document.getElementById('watchlistSectionCount');
+  const favoritesSectionCount = document.getElementById('favoritesSectionCount');
   const tabButtons = document.querySelectorAll('[data-tab]');
   const tabSections = document.querySelectorAll('[data-section]');
 
@@ -141,24 +141,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // ---- watchlist ----
-  async function loadWatchlist() {
+  async function loadFavorites() {
     try {
       const res = await fetch(`/api/watchlist/${userId}`);
       const data = await res.json();
       const items = data.watchlist || [];
       const countText = `${items.length} Items`;
-      if (watchlistCountBadge) watchlistCountBadge.textContent = countText;
-      if (watchlistSectionCount) watchlistSectionCount.textContent = countText;
-      renderWatchlist(items);
+      if (favoritesCountBadge) favoritesCountBadge.textContent = countText;
+      if (favoritesSectionCount) favoritesSectionCount.textContent = countText;
+      renderFavorites(items);
     } catch (err) {
-      console.error('Load watchlist error:', err);
-      if (watchlistCountBadge) watchlistCountBadge.textContent = '0 Items';
-      if (watchlistSectionCount) watchlistSectionCount.textContent = '0 Items';
-      if (watchlistList) watchlistList.innerHTML = `<p class="text-on-surface-variant text-center py-space-lg">Failed to load watchlist.</p>`;
+      console.error('Load favorites error:', err);
+      if (favoritesCountBadge) favoritesCountBadge.textContent = '0 Items';
+      if (favoritesSectionCount) favoritesSectionCount.textContent = '0 Items';
+      if (favoritesList) favoritesList.innerHTML = `<p class="text-on-surface-variant text-center py-space-lg">Failed to load favorites.</p>`;
     }
   }
 
-  function watchlistItemHTML(item) {
+  function favoriteItemHTML(item) {
     const lot = findCatalogLot(item.lotId);
     const img = lot ? lot.img : '';
     const name = lot ? lot.name : `Lot #${item.lotId}`;
@@ -175,7 +175,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           <div class="flex-1 flex flex-col justify-between">
             <div>
               <div class="flex flex-wrap items-center justify-between gap-1 mb-1">
-                <span class="font-body-sm text-[13px] text-on-surface-variant">Watchlist</span>
+                <span class="font-body-sm text-[13px] text-on-surface-variant">Favorite</span>
               </div>
               <h3 class="font-headline-sm text-[18px] text-on-surface font-bold leading-tight">${escapeHtml(name)}</h3>
               <p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">${escapeHtml(brand)} • Estimate ${escapeHtml(est)}</p>
@@ -183,7 +183,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             <div class="pt-space-sm mt-space-xs border-t border-outline-variant/30 flex flex-wrap items-center justify-between gap-space-sm">
               <div></div>
               <div class="flex items-center gap-2">
-                <button class="h-9 px-3 rounded-lg bg-surface-container-low hover:bg-surface-container font-label-sm text-label-sm text-on-surface transition-colors flex items-center gap-1" data-remove-watchlist="${escapeHtml(item.lotId)}">
+                <button class="h-9 px-3 rounded-lg bg-surface-container-low hover:bg-surface-container font-label-sm text-label-sm text-on-surface transition-colors flex items-center gap-1" data-remove-favorites="${escapeHtml(item.lotId)}">
                   <span class="material-symbols-outlined text-[16px]">remove</span> Remove
                 </button>
                 <a href="live-auction.html?lot=${escapeHtml(item.lotId)}" class="h-9 px-3.5 rounded-lg bg-primary-container hover:bg-primary text-on-primary font-label-sm text-label-sm transition-colors flex items-center gap-1">
@@ -197,14 +197,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     `;
   }
 
-  function renderWatchlist(items) {
-    if (!watchlistList) return;
+  function renderFavorites(items) {
+    if (!favoritesList) return;
     if (items.length === 0) {
-      watchlistList.innerHTML = `<p class="text-on-surface-variant text-center py-space-lg">Your watchlist is empty.</p>`;
+      favoritesList.innerHTML = `<p class="text-on-surface-variant text-center py-space-lg">Your favorites are empty.</p>`;
       return;
     }
-    watchlistList.innerHTML = items.map(watchlistItemHTML).join('');
-    setupRemoveButtons('watchlist');
+    favoritesList.innerHTML = items.map(favoriteItemHTML).join('');
+    setupRemoveButtons('favorites');
   }
 
   // ---- remove button handlers (event delegation via direct binding) ----
@@ -234,6 +234,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // ---- initial load ----
   loadPurchased();
-  loadWatchlist();
+  loadFavorites();
   showTab('purchased');
 });

@@ -31,7 +31,54 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
+// ---- favorites (watchlist) state ----
+let favoriteUserId = null;
+let favoritedLotIds = new Set();
+
+async function loadUserFavorites() {
+  const storedUser = localStorage.getItem('user');
+  if (!storedUser) return;
+  try {
+    const parsed = JSON.parse(storedUser);
+    favoriteUserId = parsed.id;
+  } catch (e) {}
+  if (!favoriteUserId) return;
+  try {
+    const res = await fetch(`/api/watchlist/${favoriteUserId}`);
+    const data = await res.json();
+    favoritedLotIds = new Set((data.watchlist || []).map(item => String(item.lotId)));
+  } catch (e) {
+    console.error('Load favorites error:', e);
+  }
+}
+
+async function toggleFavorite(lotId) {
+  if (!favoriteUserId) {
+    window.location.href = 'sign-in.html';
+    return;
+  }
+  const isFav = favoritedLotIds.has(String(lotId));
+  try {
+    if (isFav) {
+      await fetch(`/api/watchlist/${favoriteUserId}/${lotId}`, { method: 'DELETE' });
+      favoritedLotIds.delete(String(lotId));
+    } else {
+      await fetch(`/api/watchlist/${favoriteUserId}/${lotId}`, { method: 'POST' });
+      favoritedLotIds.add(String(lotId));
+    }
+  } catch (e) {
+    console.error('Toggle favorite error:', e);
+  }
+}
+
+function isFavorited(lotId) {
+  return favoritedLotIds.has(String(lotId));
+}
+
 function lotCardHTML(item) {
+  const fav = isFavorited(item.lotId);
+  const heartIcon = fav ? 'favorite' : 'favorite_border';
+  const heartClass = fav ? 'text-rose-500' : 'text-slate-400 hover:text-rose-500';
   return `
     <div class="group bg-surface-container-lowest rounded-xl shadow-sm border border-slate-200/80 overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col justify-between">
       <div>
@@ -40,6 +87,9 @@ function lotCardHTML(item) {
           <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent"></div>
           <div class="absolute top-3 left-3 flex items-center gap-2">
             <span class="px-2.5 py-1 rounded-full bg-slate-900/80 backdrop-blur-md text-white font-mono text-label-sm font-semibold">Lot #${escapeHtml(item.lotId)}</span>
+            <button data-favorite-lot="${escapeHtml(item.lotId)}" class="w-8 h-8 rounded-full bg-slate-900/80 backdrop-blur-md flex items-center justify-center text-[18px] ${heartClass} transition-all hover:scale-110">
+              <span class="material-symbols-outlined">${heartIcon}</span>
+            </button>
           </div>
           <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between text-white">
             <span class="text-xs uppercase tracking-widest font-mono text-blue-200">${escapeHtml(item.brand)}</span>
@@ -164,7 +214,8 @@ function updateFilterStyles(deptKey) {
 }
 
 // Initialize page
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
+  await loadUserFavorites();
   showAllCategories();
 
   // Filter bar buttons
@@ -205,4 +256,22 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   }
+
+  // Favorite button delegation (re-checked on every render via data attribute)
+  document.getElementById('categoryLotsGrid').addEventListener('click', async (e) => {
+    const heartBtn = e.target.closest('[data-favorite-lot]');
+    if (!heartBtn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const lotId = heartBtn.getAttribute('data-favorite-lot');
+    await toggleFavorite(lotId);
+    const isFav = isFavorited(lotId);
+    const icon = heartBtn.querySelector('.material-symbols-outlined');
+    if (icon) {
+      icon.textContent = isFav ? 'favorite' : 'favorite_border';
+    }
+    heartBtn.classList.toggle('text-rose-500', isFav);
+    heartBtn.classList.toggle('text-slate-400', !isFav);
+    heartBtn.classList.toggle('hover:text-rose-500', !isFav);
+  });
 });

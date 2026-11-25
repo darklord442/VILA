@@ -370,6 +370,31 @@ function decideDuel(duel) {
   return duel;
 }
 
+function parseUserIdFromPaddle(paddle) {
+  if (!paddle) return null;
+  const match = String(paddle).match(/#?(\d+)/);
+  return match ? parseInt(match[1], 10) : null;
+}
+
+// Record a won lot into the buyer's purchased_items so it shows on their profile
+async function recordPurchase(lotId, winnerPaddle, winnerBidder, winningBid) {
+  const userId = parseUserIdFromPaddle(winnerPaddle);
+  if (!userId) {
+    console.log(`Skipping purchase record for lot #${lotId}: no user ID in paddle ${winnerPaddle}`);
+    return;
+  }
+  try {
+    await db.query(
+      `INSERT INTO purchased_items (user_id, lot_id, price_paid) VALUES ($1, $2, $3)
+       ON CONFLICT (user_id, lot_id) DO NOTHING`,
+      [userId, String(lotId), winningBid || 0]
+    );
+    console.log(`Purchase recorded: user ${userId} won Lot #${lotId} at $${winningBid || 0}`);
+  } catch (err) {
+    console.error('Record purchase error:', err.message);
+  }
+}
+
 function broadcastDuelWon(duel) {
   broadcast({
     type: 'auction_won',
@@ -390,6 +415,8 @@ function broadcastDuelWon(duel) {
     winningBid: duel.winnerAmount,
     ts: new Date().toISOString(),
   });
+  // Auto-add the winning lot to the winner's purchased items (profile)
+  recordPurchase(duel.lotId, duel.winnerPaddle, duel.winnerBidder, duel.winnerAmount);
   console.log(`Lot #${duel.lotId} won by ${duel.winnerBidder} (${duel.winnerPaddle}) at $${duel.winnerAmount} after ${duel.callNumber} calls`);
 }
 
@@ -407,6 +434,8 @@ setInterval(async () => {
         winningBid: top ? top.amount : null,
         ts: new Date().toISOString(),
       });
+      // Auto-add the winning lot to the winner's purchased items (profile)
+      if (top) recordPurchase(lotId, top.paddle, top.bidder, top.amount);
       console.log(`Auction closed for Lot #${lotId}. Winner: ${top ? top.bidder : 'none'} at $${top ? top.amount : 0}`);
     }
   }
