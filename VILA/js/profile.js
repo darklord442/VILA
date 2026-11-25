@@ -438,6 +438,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  // ---- sign out ----
+  const signOutBtn = document.getElementById('signOutBtn');
+  if (signOutBtn) {
+    signOutBtn.addEventListener('click', () => {
+      localStorage.removeItem('user');
+      localStorage.removeItem('recentWins');
+      window.location.href = 'sign-in.html';
+    });
+  }
+
   // ---- initial load ----
   loadUserProfile();
   loadPurchased();
