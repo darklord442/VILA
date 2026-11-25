@@ -41,144 +41,58 @@
 </section>
 <!-- Simple Tab Navigation -->
 <div class="flex items-center border-b border-outline-variant/40 mb-space-lg gap-space-lg">
-<button class="pb-3 border-b-2 border-primary-container text-primary-container font-label-md text-label-md font-bold flex items-center gap-2">
+<button data-tab="purchased" class="pb-3 border-b-2 border-primary-container text-primary-container font-label-md text-label-md font-bold flex items-center gap-2">
 <span>Purchased Items</span>
-<span class="px-2 py-0.5 rounded-full bg-primary-container text-on-primary font-label-sm text-label-sm">3</span>
+<span id="purchasedCountBadge" class="px-2 py-0.5 rounded-full bg-primary-container text-on-primary font-label-sm text-label-sm">3 Items Total</span>
 </button>
-<button class="pb-3 border-b-2 border-transparent text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-colors flex items-center gap-1.5">
+<button data-tab="watchlist" class="pb-3 border-b-2 border-transparent text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-colors flex items-center gap-1.5">
 <span>Watchlist</span>
-<span class="px-1.5 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-[11px]">8</span>
+<span id="watchlistCountBadge" class="px-1.5 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-[11px]">8 Items</span>
 </button>
-<button class="pb-3 border-b-2 border-transparent text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-colors">
+<button data-tab="account" class="pb-3 border-b-2 border-transparent text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-colors">
 <span>Account Details</span>
 </button>
 </div>
 <!-- Main Purchased Items List & Summary Layout -->
 <div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter-lg items-start mb-space-xl">
-<!-- Left: Purchased Lots List (8 Cols) -->
+<!-- Purchased Items Section -->
 <div class="space-y-space-md lg:col-span-12">
 <div class="flex items-center justify-between pb-1">
 <div>
 <h2 class="font-title-md text-title-md text-on-surface font-bold">Purchased Items &amp; Invoices</h2>
 <p class="font-body-sm text-body-sm text-on-surface-variant">Official record of hammer acquisitions and vault transit</p>
 </div>
-<span class="font-label-sm text-label-sm text-on-surface-variant bg-surface-container-high px-2.5 py-1 rounded-md">3 Items Total</span>
+<span id="purchasedCountBadge" class="font-label-sm text-label-sm text-on-surface-variant bg-surface-container-high px-2.5 py-1 rounded-md">3 Items Total</span>
 </div>
-<!-- Purchased Item 1 -->
-<article class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-space-md hover:border-primary-container/40 transition-all shadow-sm">
-<div class="flex flex-col sm:flex-row gap-space-md">
-<div class="w-full sm:w-36 h-36 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container-low relative">
-<img class="w-full h-full object-cover" data-alt="Patek Philippe Grand Complications timepiece" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD7xF9usWJnxHm1S2eQi78DTRKX-E8Ksr1d-4Y_k_nnZ3a-4uhadNMsEcQZxmTADzRAXxgJS5IjaP_-7SjeJC-pOGD78nnXWfnW8KdyWoKSse-6ITuxdSgwmXu5Z3-mxyk1ZkyRuUPPE84XQhVW5b5sWRQD8uVNB1qL9lhEzcDBUuvJ_XrAYn-36kDH1iUQmyZb52ctB6-dG8Doe7Erz2ciXCvThyJwmw5QI6sdH_Is">
-<span class="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-surface-container-lowest/90 backdrop-blur-sm font-label-sm text-[11px] text-on-surface font-medium">Lot #118</span>
+<div id="purchasedItemsList" class="space-y-space-md"></div>
 </div>
-<div class="flex-1 flex flex-col justify-between">
+
+<!-- Watchlist Section -->
+<div data-section="watchlist" class="tab-section hidden space-y-space-md lg:col-span-12">
+<div class="flex items-center justify-between pb-1">
 <div>
-<div class="flex flex-wrap items-center justify-between gap-1 mb-1">
-<span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[12px] font-semibold flex items-center gap-1">
-<span class="material-symbols-outlined text-[14px]">check_circle</span>
-                Delivered &amp; Verified
-              </span>
-<span class="font-body-sm text-[13px] text-on-surface-variant">May 14, 2024</span>
+<h2 class="font-title-md text-title-md text-on-surface font-bold">Watchlist</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Lots you're following for upcoming salerooms</p>
 </div>
-<h3 class="font-headline-sm text-[18px] text-on-surface font-bold leading-tight">Patek Philippe Grand Complications Ref. 5270P</h3>
-<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Lot #118 • Geneva Spring Saleroom 2024</p>
+<span id="watchlistCountBadge" class="font-label-sm text-label-sm text-on-surface-variant bg-surface-container-high px-2.5 py-1 rounded-md">0 Items</span>
 </div>
-<div class="pt-space-sm mt-space-xs border-t border-outline-variant/30 flex flex-wrap items-center justify-between gap-space-sm">
-<div>
-<span class="font-label-sm text-label-sm text-on-surface-variant block">Winning Hammer Bid</span>
-<span class="font-headline-sm text-headline-sm text-primary-container font-bold">$185,000</span>
+<div id="watchlistItemsList" class="space-y-space-md"></div>
 </div>
-<div class="flex items-center gap-2">
-<button class="h-9 px-3.5 rounded-lg border border-outline-variant hover:bg-surface-container text-on-surface font-label-sm text-label-sm transition-colors flex items-center gap-1.5">
-<span class="material-symbols-outlined text-[16px] text-outline">description</span>
-                View Certificate &amp; Invoice
-              </button>
+
+<!-- Account Details Section -->
+<div data-section="account" class="tab-section hidden lg:col-span-12">
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-space-lg shadow-sm">
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-bold mb-space-md">Account Details</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Member ID: <span class="font-medium text-on-surface" id="accountMemberId">VL-84920</span></p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Active Paddle: <span class="font-medium text-on-surface" id="accountPaddle">#8492</span></p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Email: <span class="font-medium text-on-surface" id="accountEmail"></span></p>
 </div>
 </div>
-</div>
-</div>
-</article>
-<!-- Purchased Item 2 -->
-<article class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-space-md hover:border-primary-container/40 transition-all shadow-sm">
-<div class="flex flex-col sm:flex-row gap-space-md">
-<div class="w-full sm:w-36 h-36 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container-low relative">
-<img class="w-full h-full object-cover" data-alt="Audemars Piguet Royal Oak Jumbo Extra-Thin" src="https://lh3.googleusercontent.com/aida-public/AB6AXuArMQApJchlDcJwn4c5pL5sVX3ONIZLwFmE_zlZkMmeOpPOBWLZ58yJHPGycqu1pIQGt4sT_12sKmKTYpL6xNULjilcrlpmw1TzUvY37uyA8yzHe58RoFdhtWAPvTrO1v3T1gYpg1hy5HG3GoJHpYqVbzLpsWnxMV8ikrrPtPRm_zdhEtZ1O2uwJCuQUOcw0urcX9fTzwKUtqykEY3Lb0_iXfLljvlCjTNnQP9TI4uJ">
-<span class="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-surface-container-lowest/90 backdrop-blur-sm font-label-sm text-[11px] text-on-surface font-medium">Lot #103</span>
-</div>
-<div class="flex-1 flex flex-col justify-between">
-<div>
-<div class="flex flex-wrap items-center justify-between gap-1 mb-1">
-<span class="px-2 py-0.5 rounded-full bg-primary-container/10 text-primary-container text-[12px] font-semibold flex items-center gap-1">
-<span class="material-symbols-outlined text-[14px]">local_shipping</span>
-                Won • In Vault Transit
-              </span>
-<span class="font-body-sm text-[13px] text-on-surface-variant">October 12, 2024</span>
-</div>
-<h3 class="font-headline-sm text-[18px] text-on-surface font-bold leading-tight">Audemars Piguet Royal Oak 'Jumbo' Extra-Thin Ref. 15202ST</h3>
-<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Lot #103 • Geneva Saleroom XIV</p>
-</div>
-<div class="pt-space-sm mt-space-xs border-t border-outline-variant/30 flex flex-wrap items-center justify-between gap-space-sm">
-<div>
-<span class="font-label-sm text-label-sm text-on-surface-variant block">Winning Hammer Bid</span>
-<span class="font-headline-sm text-headline-sm text-primary-container font-bold">$92,000</span>
-</div>
-<div class="flex items-center gap-2">
-<button class="h-9 px-3 rounded-lg bg-surface-container-low hover:bg-surface-container font-label-sm text-label-sm text-on-surface transition-colors flex items-center gap-1">
-<span class="material-symbols-outlined text-[16px]">download</span>
-                Invoice
-              </button>
-<button class="h-9 px-3.5 rounded-lg bg-primary-container hover:bg-primary text-on-primary font-label-sm text-label-sm transition-colors flex items-center gap-1">
-<span class="material-symbols-outlined text-[16px]">pin_drop</span>
-                Track Vault Transit
-              </button>
-</div>
-</div>
-</div>
-</div>
-</article>
-<!-- Purchased Item 3 -->
-<article class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-space-md hover:border-primary-container/40 transition-all shadow-sm">
-<div class="flex flex-col sm:flex-row gap-space-md">
-<div class="w-full sm:w-36 h-36 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container-low relative">
-<img class="w-full h-full object-cover" data-alt="Richard Mille RM 011 Chronograph" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD72Es-7uH2w_wjBu3d6DtbVts4ycBhTw3x5QLgjNZ8Z1JdcN8MVPK9cp0bJjSFFr9Wum8gTcbICkZYm13cAq6pxmeAwakKlQW5ftQoS3yUX5E_gmznum8VLnFhzrOiIPz-dC38RF8ehd4YI5hOVjcKH2oD35dNEeq-xtalTrwXQMT0jvX79ED8289tuDKCUe2ebr3gbCH-ukXff23rK5FPROIONq66zgKzji06uJFY">
-<span class="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-surface-container-lowest/90 backdrop-blur-sm font-label-sm text-[11px] text-on-surface font-medium">Lot #105</span>
-</div>
-<div class="flex-1 flex flex-col justify-between">
-<div>
-<div class="flex flex-wrap items-center justify-between gap-1 mb-1">
-<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant text-[12px] font-semibold flex items-center gap-1">
-<span class="material-symbols-outlined text-[14px]">lock</span>
-                Delivered • Stored in Swiss Vault
-              </span>
-<span class="font-body-sm text-[13px] text-on-surface-variant">August 28, 2024</span>
-</div>
-<h3 class="font-headline-sm text-[18px] text-on-surface font-bold leading-tight">Richard Mille RM 011 Felipe Massa Flyback Chronograph</h3>
-<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Lot #105 • Zurich Saleroom</p>
-</div>
-<div class="pt-space-sm mt-space-xs border-t border-outline-variant/30 flex flex-wrap items-center justify-between gap-space-sm">
-<div>
-<span class="font-label-sm text-label-sm text-on-surface-variant block">Winning Hammer Bid</span>
-<span class="font-headline-sm text-headline-sm text-primary-container font-bold">$205,000</span>
-</div>
-<div class="flex items-center gap-2">
-<button class="h-9 px-3 rounded-lg bg-surface-container-low hover:bg-surface-container font-label-sm text-label-sm text-on-surface transition-colors flex items-center gap-1">
-<span class="material-symbols-outlined text-[16px]">download</span>
-                Invoice
-              </button>
-<button class="h-9 px-3.5 rounded-lg border border-outline-variant hover:bg-surface-container text-on-surface font-label-sm text-label-sm transition-colors flex items-center gap-1">
-<span class="material-symbols-outlined text-[16px] text-primary-container">shield</span>
-                View Escrow Provenance
-              </button>
-</div>
-</div>
-</div>
-</div>
-</article>
-</div>
-<!-- Right: Clean Summary & Vault Delivery Details (4 Cols) -->
 
 </div>
-</div></main><footer class="w-full bg-surface-container-lowest shadow-[0_-1px_8px_rgba(0,0,0,0.02)] mt-space-xl border-t border-outline-variant/30"><div class="max-w-[1440px] mx-auto px-margin-lg py-space-xl"><div class="grid grid-cols-1 md:grid-cols-5 gap-gutter-lg mb-space-xl"><div class="md:col-span-2 space-y-space-sm"><div class="flex items-center gap-space-xs"><span class="font-bold text-[22px] tracking-[0.28em] uppercase text-on-surface flex items-center gap-1.5">VELA<span class="w-1.5 h-1.5 rounded-full bg-primary-container inline-block"></span></span></div><p class="font-body-sm text-body-sm text-on-surface-variant max-w-sm">Premier synchronous digital auction house connecting institutional collectors and private estates with real-time provenance verification.</p><div class="flex items-center gap-space-sm pt-space-xs text-on-surface-variant"><span class="material-symbols-outlined text-[20px] text-primary-container">verified_user</span><span class="font-label-sm text-label-sm">Bank-Grade Escrow &amp; Provenance Guaranteed</span></div></div><div><h4 class="font-label-md text-label-md text-on-surface mb-space-sm uppercase tracking-wider">Auctions</h4><ul class="space-y-space-xs font-body-sm text-body-sm"><li class="text-on-surface-variant">Live Bidding Salons</li><li class="text-on-surface-variant">Private Treaty</li><li class="text-on-surface-variant">Valuation Estimates</li></ul></div><div><h4 class="font-label-md text-label-md text-on-surface mb-space-sm uppercase tracking-wider">Consignment</h4><ul class="space-y-space-xs font-body-sm text-body-sm"><li class="text-on-surface-variant">Consign Fine Art</li><li class="text-on-surface-variant">Estates &amp; Appraisals</li><li class="text-on-surface-variant">Fee Schedule</li><li class="text-on-surface-variant">Curatorial Services</li></ul></div><div><h4 class="font-label-md text-label-md text-on-surface mb-space-sm uppercase tracking-wider">Trust &amp; Security</h4><div class="space-y-space-xs"><div class="flex items-center gap-space-xs text-on-surface-variant font-body-sm text-body-sm"><span class="material-symbols-outlined text-[18px] text-primary-container">lock</span>256-Bit SSL Live Terminal</div><div class="flex items-center gap-space-xs text-on-surface-variant font-body-sm text-body-sm"><span class="material-symbols-outlined text-[18px] text-primary-container">security</span>SOC-2 Type II Certified</div><div class="flex items-center gap-space-xs text-on-surface-variant font-body-sm text-body-sm"><span class="material-symbols-outlined text-[18px] text-primary-container">fingerprint</span>Biometric Bid Signing</div></div></div></div><div class="pt-space-md flex flex-col md:flex-row items-center justify-between gap-space-md font-body-sm text-body-sm text-on-surface-variant border-t border-outline-variant/20"><p>© 2025 Vela Synchronous Auctions Ltd. All international rights reserved.</p><div class="flex items-center gap-space-lg"><span class="hover:text-on-surface transition-colors cursor-pointer">Provenance Terms</span><span class="hover:text-on-surface transition-colors cursor-pointer">Privacy Statement</span><span class="hover:text-on-surface transition-colors cursor-pointer">Bidder Agreement</span><span class="hover:text-on-surface transition-colors cursor-pointer">Compliance &amp; KYC</span></div></div></div></footer>
-
+<script src="../js/catalog.js"></script>
+<script src="../js/profile.js" defer></script>
+</main>
+<footer class="w-full bg-surface-container-lowest shadow-[0_-1px_8px_rgba(0,0,0,0.02)] mt-space-xl border-t border-outline-variant/30"><div class="max-w-[1440px] mx-auto px-margin-lg py-space-xl"><div class="grid grid-cols-1 md:grid-cols-5 gap-gutter-lg mb-space-xl"><div class="md:col-span-2 space-y-space-sm"><div class="flex items-center gap-space-xs"><span class="font-bold text-[22px] tracking-[0.28em] uppercase text-on-surface flex items-center gap-1.5">VELA<span class="w-1.5 h-1.5 rounded-full bg-primary-container inline-block"></span></span></div><p class="font-body-sm text-body-sm text-on-surface-variant max-w-sm">Premier synchronous digital auction house connecting institutional collectors and private estates with real-time provenance verification.</p><div class="flex items-center gap-space-sm pt-space-xs text-on-surface-variant"><span class="material-symbols-outlined text-[20px] text-primary-container">verified_user</span><span class="font-label-sm text-label-sm">Bank-Grade Escrow &amp; Provenance Guaranteed</span></div></div><div><h4 class="font-label-md text-label-md text-on-surface mb-space-sm uppercase tracking-wider">Auctions</h4><ul class="space-y-space-xs font-body-sm text-body-sm"><li class="text-on-surface-variant">Live Bidding Salons</li><li class="text-on-surface-variant">Private Treaty</li><li class="text-on-surface-variant">Valuation Estimates</li></ul></div><div><h4 class="font-label-md text-label-md text-on-surface mb-space-sm uppercase tracking-wider">Consignment</h4><ul class="space-y-space-xs font-body-sm text-body-sm"><li class="text-on-surface-variant">Consign Fine Art</li><li class="text-on-surface-variant">Estates &amp; Appraisals</li><li class="text-on-surface-variant">Fee Schedule</li><li class="text-on-surface-variant">Curatorial Services</li></ul></div><div><h4 class="font-label-md text-label-md text-on-surface mb-space-sm uppercase tracking-wider">Trust &amp; Security</h4><div class="space-y-space-xs"><div class="flex items-center gap-space-xs text-on-surface-variant font-body-sm text-body-sm"><span class="material-symbols-outlined text-[18px] text-primary-container">lock</span>256-Bit SSL Live Terminal</div><div class="flex items-center gap-space-xs text-on-surface-variant font-body-sm text-body-sm"><span class="material-symbols-outlined text-[18px] text-primary-container">security</span>SOC-2 Type II Certified</div><div class="flex items-center gap-space-xs text-on-surface-variant font-body-sm text-body-sm"><span class="material-symbols-outlined text-[18px] text-primary-container">fingerprint</span>Biometric Bid Signing</div></div></div></div><div class="pt-space-md flex flex-col md:flex-row items-center justify-between gap-space-md font-body-sm text-body-sm text-on-surface-variant border-t border-outline-variant/20"><p>© 2025 Vela Synchronous Auctions Ltd. All international rights reserved.</p><div class="flex items-center gap-space-lg"><span class="hover:text-on-surface transition-colors cursor-pointer">Provenance Terms</span><span class="hover:text-on-surface transition-colors cursor-pointer">Privacy Statement</span><span class="hover:text-on-surface transition-colors cursor-pointer">Bidder Agreement</span><span class="hover:text-on-surface transition-colors cursor-pointer">Compliance &amp; KYC</span></div></div></div></footer>
 
 </body></html>

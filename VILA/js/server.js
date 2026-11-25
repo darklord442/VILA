@@ -211,6 +211,36 @@ async function initAuctionTables() {
 }
 initAuctionTables();
 
+	// ============ User Purchased Items & Watchlist tables ============
+
+	async function initUserItemTables() {
+	  try {
+	    await db.query(`
+	      CREATE TABLE IF NOT EXISTS purchased_items (
+	        id SERIAL PRIMARY KEY,
+	        user_id INTEGER NOT NULL,
+	        lot_id TEXT NOT NULL,
+	        price_paid INTEGER,
+	        purchased_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+	        UNIQUE(user_id, lot_id)
+	      )
+	    `);
+	    await db.query(`
+	      CREATE TABLE IF NOT EXISTS watchlist_items (
+	        id SERIAL PRIMARY KEY,
+	        user_id INTEGER NOT NULL,
+	        lot_id TEXT NOT NULL,
+	        added_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+	        UNIQUE(user_id, lot_id)
+	      )
+	    `);
+	    console.log('User item tables ready');
+	  } catch (err) {
+	    console.error('User item table init failed:', err.message);
+	  }
+	}
+	initUserItemTables();
+
 function findCatalogLot(lotId) {
   for (const dept of VELA_CATALOG) {
     const item = dept.items.find(i => String(i.lotId) === String(lotId));
@@ -358,6 +388,104 @@ async function handlePostChat(req, res) {
 }
 app.post('/api/chat', handlePostChat);
 app.post('/api/chat/:lotId', handlePostChat);
+
+// ============ User Purchased Items & Watchlist API ============
+
+// GET - list purchased items for a user (enriched with catalog data)
+app.get('/api/purchased/:userId', async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT lot_id, price_paid, purchased_at
+       FROM purchased_items WHERE user_id = $1 ORDER BY purchased_at DESC`,
+      [req.params.userId]
+    );
+    const items = result.rows.map(row => {
+      const found = findCatalogLot(row.lot_id);
+      return {
+        lotId: row.lot_id,
+        pricePaid: row.price_paid,
+        purchasedAt: row.purchased_at,
+        ...(found ? { item: found.item, dept: found.dept } : {}),
+      };
+    });
+    res.json({ status: 'success', purchased: items });
+  } catch (err) {
+    console.error('Get purchased error:', err);
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+});
+
+// DELETE - remove an item from purchased
+app.delete('/api/purchased/:userId/:lotId', async (req, res) => {
+  try {
+    const result = await db.query(
+      'DELETE FROM purchased_items WHERE user_id = $1 AND lot_id = $2 RETURNING id',
+      [req.params.userId, req.params.lotId]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ status: 'error', message: 'Purchased item not found' });
+    }
+    res.json({ status: 'success', message: 'Removed from purchased items' });
+  } catch (err) {
+    console.error('Delete purchased error:', err);
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+});
+
+// GET - list watchlist items for a user (enriched with catalog data)
+app.get('/api/watchlist/:userId', async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT lot_id, added_at
+       FROM watchlist_items WHERE user_id = $1 ORDER BY added_at DESC`,
+      [req.params.userId]
+    );
+    const items = result.rows.map(row => {
+      const found = findCatalogLot(row.lot_id);
+      return {
+        lotId: row.lot_id,
+        addedAt: row.added_at,
+        ...(found ? { item: found.item, dept: found.dept } : {}),
+      };
+    });
+    res.json({ status: 'success', watchlist: items });
+  } catch (err) {
+    console.error('Get watchlist error:', err);
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+});
+
+// DELETE - remove an item from watchlist
+app.delete('/api/watchlist/:userId/:lotId', async (req, res) => {
+  try {
+    const result = await db.query(
+      'DELETE FROM watchlist_items WHERE user_id = $1 AND lot_id = $2 RETURNING id',
+      [req.params.userId, req.params.lotId]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ status: 'error', message: 'Watchlist item not found' });
+    }
+    res.json({ status: 'success', message: 'Removed from watchlist' });
+  } catch (err) {
+    console.error('Delete watchlist error:', err);
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+});
+
+// POST - add an item to watchlist
+app.post('/api/watchlist/:userId/:lotId', async (req, res) => {
+  try {
+    const result = await db.query(
+      `INSERT INTO watchlist_items (user_id, lot_id) VALUES ($1, $2)
+       ON CONFLICT (user_id, lot_id) DO NOTHING RETURNING id`,
+      [req.params.userId, req.params.lotId]
+    );
+    res.json({ status: 'success', added: result.rows.length > 0 });
+  } catch (err) {
+    console.error('Add watchlist error:', err);
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+});
 
 // Create HTTP server wrapping Express
 const server = http.createServer(app);
