@@ -31,9 +31,27 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
-// ---- favorites (watchlist) state ----
+// ---- live lot state + favorites (watchlist) state ----
 let favoriteUserId = null;
 let favoritedLotIds = new Set();
+let lotStatesById = new Map();
+
+async function loadLotStates() {
+  try {
+    const res = await fetch('/api/lots');
+    const data = await res.json();
+    if (data.status === 'success' && Array.isArray(data.lots)) {
+      lotStatesById = new Map(
+        data.lots.map(l => [
+          String(l.lotId),
+          { currentBid: l.currentBid, auctionStatus: l.auctionStatus || 'active' },
+        ])
+      );
+    }
+  } catch (e) {
+    console.error('Load lot states error:', e);
+  }
+}
 
 async function loadUserFavorites() {
   const storedUser = localStorage.getItem('user');
@@ -79,6 +97,19 @@ function lotCardHTML(item) {
   const fav = isFavorited(item.lotId);
   const heartIcon = fav ? 'favorite' : 'favorite_border';
   const heartClass = fav ? 'text-rose-500' : 'text-slate-400 hover:text-rose-500';
+  const liveState = lotStatesById.get(String(item.lotId));
+  const isClosed = liveState && liveState.auctionStatus === 'closed';
+  const displayBid = liveState && liveState.currentBid != null ? liveState.currentBid : item.startingBid;
+  const statusDotClass = isClosed ? 'bg-rose-500' : 'bg-emerald-400 animate-pulse';
+  const statusTextClass = isClosed ? 'text-rose-300' : 'text-emerald-300';
+  const statusLabel = isClosed ? 'Closed' : 'Live Floor';
+  const bidLabel = isClosed ? 'Final Bid' : 'Current Bid';
+  const actionBtnClass = isClosed
+    ? 'w-full py-2.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 font-label-md text-label-md font-semibold transition-all shadow-sm flex items-center justify-center gap-2'
+    : 'w-full py-2.5 rounded-lg bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md font-semibold transition-all shadow-sm flex items-center justify-center gap-2 active:scale-95';
+  const actionLabel = isClosed ? 'Auction Closed' : 'Place Floor Bid';
+  const actionIcon = isClosed ? 'lock' : 'gavel';
+
   return `
     <div class="group bg-surface-container-lowest rounded-xl shadow-sm border border-slate-200/80 overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col justify-between">
       <div>
@@ -94,8 +125,8 @@ function lotCardHTML(item) {
           <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between text-white">
             <span class="text-xs uppercase tracking-widest font-mono text-blue-200">${escapeHtml(item.brand)}</span>
             <div class="flex items-center gap-1.5">
-              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span class="text-xs font-semibold uppercase tracking-wider font-mono text-emerald-300">Live Floor</span>
+              <span class="w-2 h-2 rounded-full ${statusDotClass}"></span>
+              <span class="text-xs font-semibold uppercase tracking-wider font-mono ${statusTextClass}">${statusLabel}</span>
             </div>
           </div>
         </div>
@@ -105,8 +136,8 @@ function lotCardHTML(item) {
           </h3>
           <div class="flex items-baseline justify-between pt-2 border-t border-slate-100">
             <div>
-              <div class="text-xs text-on-surface-variant font-label-sm uppercase tracking-wider">Current Bid</div>
-              <div class="text-xl font-bold font-mono text-primary mt-0.5">${formatCurrency(item.startingBid)}</div>
+              <div class="text-xs text-on-surface-variant font-label-sm uppercase tracking-wider">${bidLabel}</div>
+              <div class="text-xl font-bold font-mono text-primary mt-0.5">${formatCurrency(displayBid)}</div>
             </div>
             <div class="text-right">
               <div class="text-xs text-on-surface-variant font-label-sm uppercase tracking-wider">Estimate</div>
@@ -116,9 +147,9 @@ function lotCardHTML(item) {
         </div>
       </div>
       <div class="p-space-md pt-0">
-        <a href="live-auction.html?lot=${encodeURIComponent(item.lotId)}" class="w-full py-2.5 rounded-lg bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md font-semibold transition-all shadow-sm flex items-center justify-center gap-2 active:scale-95">
-          <span>Place Floor Bid</span>
-          <span class="material-symbols-outlined text-title-md">gavel</span>
+        <a href="live-auction.html?lot=${encodeURIComponent(item.lotId)}" class="${actionBtnClass}">
+          <span>${actionLabel}</span>
+          <span class="material-symbols-outlined text-title-md">${actionIcon}</span>
         </a>
       </div>
     </div>
@@ -215,7 +246,7 @@ function updateFilterStyles(deptKey) {
 
 // Initialize page
 document.addEventListener('DOMContentLoaded', async function() {
-  await loadUserFavorites();
+  await Promise.all([loadUserFavorites(), loadLotStates()]);
   showAllCategories();
 
   // Filter bar buttons

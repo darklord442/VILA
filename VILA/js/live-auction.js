@@ -402,6 +402,28 @@ function handleWSMessage(msg) {
         }
       }
       break;
+    case 'auction_reset':
+      if (sameLot(msg.lotId, currentLotId)) {
+        auctionEnded = false;
+        auctionCall = null;
+        callDeadline = null;
+        serverEndTime = msg.endTime || (msg.timeLeft ? Date.now() + msg.timeLeft : null);
+        lastSyncTime = Date.now();
+        auctionState = {
+          lotId: msg.lotId,
+          auctionStatus: 'active',
+          timeLeft: msg.timeLeft || 0,
+          currentBid: msg.currentBid,
+          currentBidder: null,
+          currentPaddle: null,
+        };
+        setText('display-current-bid', fmtMoney(msg.currentBid || 0));
+        setupBidConsole(msg.currentBid || 0);
+        setText('current-leader', 'No bids yet');
+        renderAuctionUI();
+        appendSystemNote('Auction reset for demo — bidding is open again.', 'primary');
+      }
+      break;
     case 'chat':
       if (sameLot(msg.lotId, currentLotId)) {
         renderChatMessage({ user: msg.user, text: msg.text });
@@ -547,10 +569,11 @@ function renderAuctionUI() {
   if (noLotNotice) noLotNotice.classList.add('hidden');
 
   if (auctionEnded || (auctionState && auctionState.auctionStatus === 'closed')) {
-    timerBox.classList.remove('bg-blue-100', 'ring-2', 'ring-primary-container');
+    timerBox.classList.remove('bg-blue-100', 'ring-2', 'ring-primary-container', 'animate-pulse');
     timerBox.classList.add('bg-rose-50', 'border-rose-200');
     timerElem.textContent = 'CLOSED';
     timerElem.className = 'font-headline-sm text-headline-sm font-bold text-rose-600 tabular-nums';
+    if (callBanner) callBanner.classList.add('hidden');
     if (bidBtn) {
       bidBtn.disabled = true;
       bidBtn.classList.add('opacity-50', 'cursor-not-allowed');
@@ -558,7 +581,20 @@ function renderAuctionUI() {
       const btnText = document.getElementById('bid-btn-text');
       if (btnText) btnText.textContent = 'Auction Closed';
     }
+    if (auctionState && auctionState.currentBidder) {
+      const leaderBox = document.getElementById('current-leader');
+      if (leaderBox) {
+        leaderBox.innerHTML = `Won by <strong class="font-bold">${escapeHtml(auctionState.currentBidder)}</strong> at ${fmtMoney(auctionState.currentBid || 0)}`;
+      }
+    }
     return;
+  }
+
+  if (bidBtn && (!auctionCall || !auctionCall.turnPaddle)) {
+    bidBtn.disabled = false;
+    bidBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    bidBtn.classList.add('hover:bg-blue-700');
+    updateBidButtonText(activeBidTarget);
   }
 
   const timeLeft = computeTimeLeft();
@@ -639,7 +675,9 @@ async function fetchAuctionState() {
     if (data.status === 'success') {
       serverEndTime = data.endTime ? new Date(data.endTime).getTime() : null;
       lastSyncTime = Date.now();
+      auctionEnded = data.auctionStatus === 'closed';
 
+      const prevBid = auctionState ? auctionState.currentBid : null;
       auctionState = {
         lotId: data.lotId,
         auctionStatus: data.auctionStatus,
@@ -648,6 +686,10 @@ async function fetchAuctionState() {
         currentBidder: data.currentBidder,
         currentPaddle: data.currentPaddle,
       };
+      if (data.currentBid != null && data.currentBid !== prevBid) {
+        setText('display-current-bid', fmtMoney(data.currentBid));
+        setupBidConsole(data.currentBid);
+      }
       renderAuctionUI();
     } else {
       setServerStatus(false, data.message || 'Server error');

@@ -200,12 +200,22 @@ async function initAuctionTables() {
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `);
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS auction_lots (
+        lot_id TEXT PRIMARY KEY,
+        status TEXT NOT NULL DEFAULT 'active',
+        end_time BIGINT NOT NULL,
+        winner_bidder TEXT,
+        winner_paddle TEXT,
+        winning_bid INTEGER,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
     console.log('Auction tables ready');
   } catch (err) {
     console.error('Auction table init failed (continuing anyway):', err.message);
   }
 }
-initAuctionTables();
 
 	// ============ User Purchased Items & Watchlist tables ============
 
@@ -252,7 +262,7 @@ const AUCTION_DURATION_MS = 30 * 60 * 1000; // 30 minutes per lot
 const ANTI_SNIPE_WINDOW_MS = 10 * 1000;     // extend if bid in last 10 seconds
 const ANTI_SNIPE_EXTENSION_MS = 60 * 1000;  // add 60 seconds
 
-function initAuctionSessions() {
+function initAuctionSessionsSync() {
   for (const dept of VELA_CATALOG) {
     for (const item of dept.items) {
       auctionSessions.set(String(item.lotId), {
@@ -260,27 +270,112 @@ function initAuctionSessions() {
         endTime: Date.now() + AUCTION_DURATION_MS,
         status: 'active',
         startingBid: item.startingBid,
+        winnerBidder: null,
+        winnerPaddle: null,
+        winningBid: null,
       });
     }
   }
-  console.log(`Auction sessions initialized for ${auctionSessions.size} lots`);
 }
-initAuctionSessions();
+initAuctionSessionsSync();
+
+async function saveLotSession(session) {
+  if (!session) return;
+  try {
+    await db.query(
+      `INSERT INTO auction_lots (lot_id, status, end_time, winner_bidder, winner_paddle, winning_bid, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, NOW())
+       ON CONFLICT (lot_id) DO UPDATE SET
+         status = EXCLUDED.status,
+         end_time = EXCLUDED.end_time,
+         winner_bidder = EXCLUDED.winner_bidder,
+         winner_paddle = EXCLUDED.winner_paddle,
+         winning_bid = EXCLUDED.winning_bid,
+         updated_at = NOW()`,
+      [
+        String(session.lotId),
+        session.status,
+        session.endTime,
+        session.winnerBidder || null,
+        session.winnerPaddle || null,
+        session.winningBid != null ? session.winningBid : null,
+      ]
+    );
+  } catch (err) {
+    console.error('Save lot session error:', err.message);
+  }
+}
+
+async function initAuctionSessions() {
+  try {
+    const res = await db.query('SELECT lot_id, status, end_time, winner_bidder, winner_paddle, winning_bid FROM auction_lots');
+    const savedMap = new Map(res.rows.map(r => [String(r.lot_id), r]));
+    const now = Date.now();
+    for (const dept of VELA_CATALOG) {
+      for (const item of dept.items) {
+        const key = String(item.lotId);
+        const saved = savedMap.get(key);
+        if (saved) {
+          const endTime = Number(saved.end_time);
+          const status = saved.status === 'closed' || now >= endTime ? 'closed' : 'active';
+          const session = {
+            lotId: key,
+            endTime,
+            status,
+            startingBid: item.startingBid,
+            winnerBidder: saved.winner_bidder || null,
+            winnerPaddle: saved.winner_paddle || null,
+            winningBid: saved.winning_bid != null ? Number(saved.winning_bid) : null,
+          };
+          auctionSessions.set(key, session);
+          if (status === 'closed' && saved.status !== 'closed') {
+            saveLotSession(session);
+          }
+        } else {
+          const session = auctionSessions.get(key);
+          await saveLotSession(session);
+        }
+      }
+    }
+    console.log(`Auction sessions initialized for ${auctionSessions.size} lots`);
+  } catch (err) {
+    console.error('Load auction_lots failed (using in-memory defaults):', err.message);
+  }
+}
+
+(async () => {
+  await initAuctionTables();
+  await initAuctionSessions();
+})();
 
 function getAuctionSession(lotId) {
   return auctionSessions.get(String(lotId)) || null;
 }
 
-function startFreshAuction(lotId, startingBid) {
+async function startFreshAuction(lotId, startingBid, clearBids = false) {
+  const key = String(lotId);
   // New round: clear any head-to-head call state from the previous round
-  auctionDuels.delete(String(lotId));
-  auctionSessions.set(String(lotId), {
-    lotId: String(lotId),
+  auctionDuels.delete(key);
+  if (clearBids) {
+    try {
+      await db.query('DELETE FROM auction_bids WHERE lot_id = $1', [key]);
+    } catch (err) {
+      console.error('Clear bids error:', err.message);
+    }
+  }
+  const session = {
+    lotId: key,
     endTime: Date.now() + AUCTION_DURATION_MS,
     status: 'active',
     startingBid,
-  });
-  console.log(`Fresh auction started for Lot #${lotId}`);
+    winnerBidder: null,
+    winnerPaddle: null,
+    winningBid: null,
+  };
+  auctionSessions.set(key, session);
+  await saveLotSession(session);
+  console.log(`Fresh auction started for Lot #${key}`);
+  return session;
 }
 
 function getAuctionState(lotId) {
@@ -291,6 +386,7 @@ function getAuctionState(lotId) {
   if (status === 'active' && now >= session.endTime) {
     status = 'closed';
     session.status = 'closed';
+    saveLotSession(session);
   }
   return {
     lotId: session.lotId,
@@ -298,6 +394,9 @@ function getAuctionState(lotId) {
     timeLeft: status === 'active' ? Math.max(0, session.endTime - now) : 0,
     endTime: session.endTime,
     startingBid: session.startingBid,
+    winnerBidder: session.winnerBidder,
+    winnerPaddle: session.winnerPaddle,
+    winningBid: session.winningBid,
   };
 }
 
@@ -305,13 +404,20 @@ function extendAuction(lotId, extraMs = ANTI_SNIPE_EXTENSION_MS) {
   const session = getAuctionSession(lotId);
   if (!session || session.status !== 'active') return false;
   session.endTime = Date.now() + extraMs;
+  saveLotSession(session);
   return true;
 }
 
-function closeAuction(lotId) {
+function closeAuction(lotId, winnerInfo = null) {
   const session = getAuctionSession(lotId);
   if (!session) return null;
   session.status = 'closed';
+  if (winnerInfo) {
+    session.winnerBidder = winnerInfo.winnerBidder || null;
+    session.winnerPaddle = winnerInfo.winnerPaddle || null;
+    session.winningBid = winnerInfo.winningBid != null ? winnerInfo.winningBid : null;
+  }
+  saveLotSession(session);
   return session;
 }
 
@@ -402,7 +508,11 @@ function broadcastDuelWon(duel) {
     ts: new Date().toISOString(),
   });
   // Hammer falls: close the lot so no more bids are accepted
-  closeAuction(duel.lotId);
+  closeAuction(duel.lotId, {
+    winnerBidder: duel.winnerBidder,
+    winnerPaddle: duel.winnerPaddle,
+    winningBid: duel.winnerAmount,
+  });
   broadcast({
     type: 'auction_closed',
     lotId: duel.lotId,
@@ -420,8 +530,12 @@ function broadcastDuelWon(duel) {
 setInterval(async () => {
   for (const [lotId, session] of auctionSessions.entries()) {
     if (session.status === 'active' && Date.now() >= session.endTime) {
-      session.status = 'closed';
       const top = await getTopBid(lotId);
+      closeAuction(lotId, top ? {
+        winnerBidder: top.bidder,
+        winnerPaddle: top.paddle,
+        winningBid: top.amount,
+      } : null);
       broadcast({
         type: 'auction_closed',
         lotId,
@@ -463,6 +577,10 @@ function broadcast(payload) {
 // Shared bid placement logic (REST + WS)
 async function placeBid(lotId, amount, bidder, paddle) {
   const key = lotId ? String(lotId) : null;
+  const sessionState = key ? getAuctionState(key) : null;
+  if (sessionState && sessionState.status === 'closed') {
+    return { ok: false, error: 'This auction has closed. Bidding is no longer accepted.' };
+  }
   const num = Number(amount);
   if (!Number.isFinite(num) || num <= 0) {
     return { ok: false, error: 'A valid positive bid amount is required.' };
@@ -584,12 +702,15 @@ app.get('/api/lots', async (req, res) => {
     for (const dept of VELA_CATALOG) {
       for (const item of dept.items) {
         const top = await getTopBid(item.lotId);
+        const state = getAuctionState(item.lotId);
         lots.push({
           ...item,
           department: dept.department,
           deptName: dept.name,
           currentBid: top ? top.amount : item.startingBid,
           highBidder: top ? top.bidder : null,
+          auctionStatus: state ? state.status : 'active',
+          timeLeft: state ? state.timeLeft : 0,
         });
       }
     }
@@ -616,32 +737,12 @@ app.post('/api/lots/:lotId/bid', async (req, res) => {
 // ============ Auction State API ============
 
 // GET - auction state for a lot (time left, status, current bid)
-// Auto-resets a closed auction so a new bidding round starts on access
 app.get('/api/auction/:lotId/state', async (req, res) => {
   try {
     const lotId = req.params.lotId;
     const state = getAuctionState(lotId);
     if (!state) {
       return res.status(404).json({ status: 'error', message: 'Lot not found' });
-    }
-
-    // Auto-reset: if the previous auction closed, start a fresh 30-minute round
-    if (state.status === 'closed') {
-      const found = findCatalogLot(lotId);
-      startFreshAuction(lotId, found ? found.item.startingBid : 0);
-      const top = await getTopBid(lotId);
-      return res.json({
-        status: 'success',
-        lotId,
-        auctionStatus: 'active',
-        timeLeft: AUCTION_DURATION_MS,
-        endTime: Date.now() + AUCTION_DURATION_MS,
-        startingBid: found ? found.item.startingBid : 0,
-        currentBid: top ? top.amount : (found ? found.item.startingBid : 0),
-        currentBidder: top ? top.bidder : null,
-        currentPaddle: top ? top.paddle : null,
-        reset: true,
-      });
     }
 
     const top = await getTopBid(state.lotId);
@@ -653,11 +754,67 @@ app.get('/api/auction/:lotId/state', async (req, res) => {
       endTime: state.endTime,
       startingBid: state.startingBid,
       currentBid: top ? top.amount : state.startingBid,
-      currentBidder: top ? top.bidder : null,
-      currentPaddle: top ? top.paddle : null,
+      currentBidder: top ? top.bidder : state.winnerBidder,
+      currentPaddle: top ? top.paddle : state.winnerPaddle,
     });
   } catch (err) {
     console.error('Auction state error:', err);
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+});
+
+// POST - reset a single lot for demo purposes (clears its bids and reopens bidding)
+app.post('/api/auction/:lotId/reset', async (req, res) => {
+  try {
+    const lotId = req.params.lotId;
+    const found = findCatalogLot(lotId);
+    if (!found) {
+      return res.status(404).json({ status: 'error', message: 'Lot not found' });
+    }
+    const session = await startFreshAuction(lotId, found.item.startingBid, true);
+    broadcast({
+      type: 'auction_reset',
+      lotId: session.lotId,
+      auctionStatus: 'active',
+      timeLeft: AUCTION_DURATION_MS,
+      endTime: session.endTime,
+      startingBid: found.item.startingBid,
+      currentBid: found.item.startingBid,
+    });
+    res.json({
+      status: 'success',
+      lotId: session.lotId,
+      auctionStatus: 'active',
+      timeLeft: AUCTION_DURATION_MS,
+      endTime: session.endTime,
+      currentBid: found.item.startingBid,
+    });
+  } catch (err) {
+    console.error('Auction reset error:', err);
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+});
+
+// POST - reset all lots for demo purposes
+app.post('/api/auction/reset-all', async (req, res) => {
+  try {
+    for (const dept of VELA_CATALOG) {
+      for (const item of dept.items) {
+        const session = await startFreshAuction(item.lotId, item.startingBid, true);
+        broadcast({
+          type: 'auction_reset',
+          lotId: session.lotId,
+          auctionStatus: 'active',
+          timeLeft: AUCTION_DURATION_MS,
+          endTime: session.endTime,
+          startingBid: item.startingBid,
+          currentBid: item.startingBid,
+        });
+      }
+    }
+    res.json({ status: 'success', message: 'All auction lots reset to active' });
+  } catch (err) {
+    console.error('Reset all auctions error:', err);
     res.status(500).json({ status: 'error', message: err.message });
   }
 });
@@ -672,10 +829,8 @@ app.post('/api/auction/:lotId/bid', async (req, res) => {
       return res.status(404).json({ status: 'error', message: 'Lot not found' });
     }
 
-    // Auto-reset: if the previous auction closed, start a fresh round before bidding
-    if (state.auctionStatus === 'closed') {
-      const found = findCatalogLot(lotId);
-      startFreshAuction(lotId, found ? found.item.startingBid : 0);
+    if (state.status === 'closed') {
+      return res.status(400).json({ status: 'error', message: 'This auction has closed. Bidding is no longer accepted.' });
     }
 
     const result = await placeBid(lotId, amount, bidder, paddle);

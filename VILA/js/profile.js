@@ -15,6 +15,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const favoritesCountBadge = document.getElementById('favoritesCountBadge');
   const purchasedSectionCount = document.getElementById('purchasedSectionCount');
   const favoritesSectionCount = document.getElementById('favoritesSectionCount');
+  const statPurchasedLots = document.getElementById('statPurchasedLots');
+  const statTotalInvestment = document.getElementById('statTotalInvestment');
   const tabButtons = document.querySelectorAll('[data-tab]');
   const tabSections = document.querySelectorAll('[data-section]');
 
@@ -172,13 +174,23 @@ document.addEventListener('DOMContentLoaded', async () => {
       const data = await res.json();
       const items = data.purchased || [];
       const countText = `${items.length} Items Total`;
+      const lotsText = `${items.length} ${items.length === 1 ? 'Lot' : 'Lots'}`;
+      const totalInvestment = items.reduce((sum, item) => {
+        const lot = findCatalogLot(item.lotId);
+        const price = item.pricePaid || (lot ? lot.startingBid : 0);
+        return sum + Number(price || 0);
+      }, 0);
       if (purchasedCountBadge) purchasedCountBadge.textContent = countText;
       if (purchasedSectionCount) purchasedSectionCount.textContent = countText;
+      if (statPurchasedLots) statPurchasedLots.textContent = lotsText;
+      if (statTotalInvestment) statTotalInvestment.textContent = formatCurrency(totalInvestment);
       renderPurchased(items);
     } catch (err) {
       console.error('Load purchased error:', err);
       if (purchasedCountBadge) purchasedCountBadge.textContent = '0 Items Total';
       if (purchasedSectionCount) purchasedSectionCount.textContent = '0 Items Total';
+      if (statPurchasedLots) statPurchasedLots.textContent = '0 Lots';
+      if (statTotalInvestment) statTotalInvestment.textContent = '$0';
       if (purchasedList) purchasedList.innerHTML = `<p class="text-on-surface-variant text-center py-space-lg">Failed to load purchased items.</p>`;
     }
   }
