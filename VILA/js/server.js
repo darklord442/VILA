@@ -252,9 +252,9 @@ function findCatalogLot(lotId) {
 // ============ Auction Session State (per lot) ============
 
 const auctionSessions = new Map();
-const AUCTION_DURATION_MS = 5 * 60 * 1000; // 5 minutes per lot
-const ANTI_SNIPE_WINDOW_MS = 10 * 1000;    // extend if bid in last 10 seconds
-const ANTI_SNIPE_EXTENSION_MS = 60 * 1000; // add 60 seconds
+const AUCTION_DURATION_MS = 30 * 60 * 1000; // 30 minutes per lot
+const ANTI_SNIPE_WINDOW_MS = 10 * 1000;     // extend if bid in last 10 seconds
+const ANTI_SNIPE_EXTENSION_MS = 60 * 1000;  // add 60 seconds
 
 function initAuctionSessions() {
   for (const dept of VELA_CATALOG) {
@@ -273,6 +273,16 @@ initAuctionSessions();
 
 function getAuctionSession(lotId) {
   return auctionSessions.get(String(lotId)) || null;
+}
+
+function startFreshAuction(lotId, startingBid) {
+  auctionSessions.set(String(lotId), {
+    lotId: String(lotId),
+    endTime: Date.now() + AUCTION_DURATION_MS,
+    status: 'active',
+    startingBid,
+  });
+  console.log(`Fresh auction started for Lot #${lotId}`);
 }
 
 function getAuctionState(lotId) {
@@ -455,12 +465,34 @@ app.post('/api/lots/:lotId/bid', async (req, res) => {
 // ============ Auction State API ============
 
 // GET - auction state for a lot (time left, status, current bid)
+// Auto-resets a closed auction so a new bidding round starts on access
 app.get('/api/auction/:lotId/state', async (req, res) => {
   try {
-    const state = getAuctionState(req.params.lotId);
+    const lotId = req.params.lotId;
+    const state = getAuctionState(lotId);
     if (!state) {
       return res.status(404).json({ status: 'error', message: 'Lot not found' });
     }
+
+    // Auto-reset: if the previous auction closed, start a fresh 30-minute round
+    if (state.status === 'closed') {
+      const found = findCatalogLot(lotId);
+      startFreshAuction(lotId, found ? found.item.startingBid : 0);
+      const top = await getTopBid(lotId);
+      return res.json({
+        status: 'success',
+        lotId,
+        auctionStatus: 'active',
+        timeLeft: AUCTION_DURATION_MS,
+        endTime: Date.now() + AUCTION_DURATION_MS,
+        startingBid: found ? found.item.startingBid : 0,
+        currentBid: top ? top.amount : (found ? found.item.startingBid : 0),
+        currentBidder: top ? top.bidder : null,
+        currentPaddle: top ? top.paddle : null,
+        reset: true,
+      });
+    }
+
     const top = await getTopBid(state.lotId);
     res.json({
       status: 'success',
@@ -488,15 +520,13 @@ app.post('/api/auction/:lotId/bid', async (req, res) => {
     if (!state) {
       return res.status(404).json({ status: 'error', message: 'Lot not found' });
     }
+
+    // Auto-reset: if the previous auction closed, start a fresh round before bidding
     if (state.auctionStatus === 'closed') {
-      const top = await getTopBid(lotId);
-      return res.status(400).json({
-        status: 'error',
-        message: 'Auction is closed',
-        winner: top ? top.bidder : null,
-        winningBid: top ? top.amount : null,
-      });
+      const found = findCatalogLot(lotId);
+      startFreshAuction(lotId, found ? found.item.startingBid : 0);
     }
+
     const result = await placeBid(lotId, amount, bidder, paddle);
     if (!result.ok) return res.status(400).json({ status: 'error', message: result.error });
     const updated = getAuctionState(lotId);

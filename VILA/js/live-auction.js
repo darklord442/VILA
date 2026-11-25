@@ -16,8 +16,9 @@ function updatePaddleDisplays() {
 }
 updatePaddleDisplays();
 
-// WebSocket status UI
+// WebSocket + server status UI
 const wsStatusEl = document.getElementById('ws-status');
+const serverStatusEl = document.getElementById('server-status');
 function setWSStatus(connected) {
   wsConnected = connected;
   if (wsStatusEl) {
@@ -25,6 +26,14 @@ function setWSStatus(connected) {
     wsStatusEl.className = connected
       ? 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse'
       : 'w-2 h-2 rounded-full bg-rose-500';
+  }
+}
+function setServerStatus(ok, message) {
+  if (serverStatusEl) {
+    serverStatusEl.textContent = message || (ok ? 'Server OK' : 'Server unreachable');
+    serverStatusEl.className = ok
+      ? 'text-xs text-emerald-600 font-medium'
+      : 'text-xs text-rose-600 font-medium';
   }
 }
 
@@ -503,6 +512,7 @@ async function fetchAuctionState() {
   try {
     const res = await fetch(`/api/auction/${currentLotId}/state`);
     const data = await res.json();
+    setServerStatus(true, 'Server OK');
     if (data.status === 'success') {
       serverEndTime = data.endTime ? new Date(data.endTime).getTime() : null;
       lastSyncTime = Date.now();
@@ -516,8 +526,11 @@ async function fetchAuctionState() {
         currentPaddle: data.currentPaddle,
       };
       renderAuctionUI();
+    } else {
+      setServerStatus(false, data.message || 'Server error');
     }
   } catch (err) {
+    setServerStatus(false, 'Server unreachable');
     console.warn('Auction state fetch failed:', err);
   }
 }
